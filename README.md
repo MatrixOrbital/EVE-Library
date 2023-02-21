@@ -28,11 +28,20 @@ https://www.matrixorbital.com/ftdi-eve/eve-ft812
 
 **AND**
 
-An EVE2-USB2SPI Bridge
+An EVE2-USB2SPI-KIT-A Bridge
 
 https://www.matrixorbital.com/ftdi-eve/EVE2-USB2SPI-KIT-A
 
 ![alt text](https://www.matrixorbital.com/image/cache/catalog/products/EVE2%20USB%20to%20SPI%20Module-250x250.jpg)
+
+**OR**
+
+An EVE-USB2SPI-KIT-B Bridge, recommended for new design.
+
+https://www.matrixorbital.com/eve-usb2spi-kit-b
+
+![alt text](https://www.matrixorbital.com/image/cache/catalog/products/Accessories%20resized/EVE-USB2SPI-KIT-B-1024768-250x250.png)
+
 
 
 **SOFTWARE**
