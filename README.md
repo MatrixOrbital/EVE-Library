@@ -1,12 +1,13 @@
 # Windows and Linux EVE2, EVE3 AND EVE4 TEST DEMO SOFTWARE
 
-A quick and easy sanity check to ensure that your Matrix Orbital EVE2, EVE3 or EVE4 SPI TFT Display and touch hardware works properly. This software supports the EVE3x and EVE4x modules as well.
+A quick and easy sanity check to ensure that your Matrix Orbital EVE2, EVE3, EVE3x or EVE4 SPI TFT Display and touch hardware works properly. 
 
 Support Tool
 
 ------------------------------------------------------------------
 
-**Hardware Requirements:**
+**Hardware Requirements:** 
+An EVE display such as:
 
 ![alt text](https://www.matrixorbital.com/image/cache/catalog/products/EVE/EVE3-43G-300x300.jpg)
 
@@ -27,6 +28,7 @@ https://www.matrixorbital.com/ftdi-eve/eve-bt815-bt816
 https://www.matrixorbital.com/ftdi-eve/eve-ft812
 
 **AND**
+You will require an USB to SPI bridge OR an USB version of the EVE display.
 
 An EVE2-USB2SPI-KIT-A Bridge
 
@@ -48,9 +50,9 @@ https://www.matrixorbital.com/eve-usb2spi-kit-b
 
 **Building**
 
-The sample code is provided as a cmake based project, on windows all dependencies are included, on linux the `libftdi1-dev` package is required. 
+The sample code is provided as a cmake based project, on windows all dependencies are included, on Linux the `libftdi1-dev` package is required. 
 
-for both windows and linux: 
+for both Windows and Linux: 
 ```
 git clone https://github.com/MatrixOrbital/Eve-Sample-Code.git
 cd Eve-Sample-Code
