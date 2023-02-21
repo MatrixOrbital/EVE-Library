@@ -6,7 +6,8 @@ Support Tool
 
 ------------------------------------------------------------------
 
-**Hardware Requirements:** 
+**Hardware Requirements** 
+
 An EVE display such as:
 
 ![alt text](https://www.matrixorbital.com/image/cache/catalog/products/EVE/EVE3-43G-300x300.jpg)
@@ -28,7 +29,7 @@ https://www.matrixorbital.com/ftdi-eve/eve-bt815-bt816
 https://www.matrixorbital.com/ftdi-eve/eve-ft812
 
 **AND**
-You will require an USB to SPI bridge OR an USB version of the EVE display.
+You will require an USB to SPI bridge OR an USB version of the EVE display:
 
 An EVE2-USB2SPI-KIT-A Bridge
 
