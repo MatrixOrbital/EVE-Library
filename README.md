@@ -49,6 +49,12 @@ https://www.matrixorbital.com/eve-usb2spi-kit-b
 
 **SOFTWARE**
 
+Windows
+You can use the provided EXE files, or build the project.
+
+Linux
+You will require to build the project.
+
 **Building**
 
 The sample code is provided as a cmake based project, on windows all dependencies are included, on Linux the `libftdi1-dev` package is required. 
