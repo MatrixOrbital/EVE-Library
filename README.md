@@ -89,6 +89,19 @@ Select the binary generated for your specific EVE2, EVE3 or EVE4 variant to test
 * **TPR** - Resistive touch panel. Uses FT812/BT816/BT818 Graphics controller
 * **TPC** - Capacitive touch panel. Uses FT813/BT815/BT817 Graphics controller
 
-Note: for linux depending on your operating system normal users may not have access to USB devices. On those systems, run the examples with `sudo` 
+Note: for Linux depending on your operating system normal users may not have access to USB devices. On those systems, run the examples with `sudo` 
+
+**RUN THE EXE**
+
+Please note, if you do not have the USB2SPI module and an EVE2/3/4 display attached, nothing will happen.
+![alt text](https://raw.githubusercontent.com/MatrixOrbital/Basic-EVE-Demo/master/Screens/Basic-EVE-Demo-5.png)
+
+If you have a touch screen, TPR or TPC, you will need to calibrate the touch screen by pressing the dots. After the calibration is complete, you will see Matrix Orbital with a blue circle. If you press the circle it will enlarge.
+
+![alt text](https://raw.githubusercontent.com/MatrixOrbital/Basic-EVE-Demo/master/Screens/Basic-EVE-Demo-1.jpg)
+![alt text](https://raw.githubusercontent.com/MatrixOrbital/Basic-EVE-Demo/master/Screens/Basic-EVE-Demo-2.jpg)
+![alt text](https://raw.githubusercontent.com/MatrixOrbital/Basic-EVE-Demo/master/Screens/Basic-EVE-Demo-3.jpg)
+![alt text](https://raw.githubusercontent.com/MatrixOrbital/Basic-EVE-Demo/master/Screens/Basic-EVE-Demo-4.jpg)
+
 
 Support Forums: http://www.lcdforums.com/forums/viewforum.php?f=45
