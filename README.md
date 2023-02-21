@@ -48,11 +48,9 @@ https://www.matrixorbital.com/eve-usb2spi-kit-b
 
 **SOFTWARE**
 
-Windows
-You can use the provided EXE files, or build the project.
+Windows: You can use the provided EXE files, or build the project.
 
-Linux
-You will require to build the project.
+Linux: You will require to build the project.
 
 **Building**
 
