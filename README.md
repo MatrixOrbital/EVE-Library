@@ -9,7 +9,6 @@ Support Tool
 **Hardware Requirements** 
 
 An EVE display such as:
-
 ![alt text](https://www.matrixorbital.com/image/cache/catalog/products/EVE/EVE3-43G-300x300.jpg)
 
 **EVE4x SPI TFT** - Uses BT817/BT818 Graphics controller
