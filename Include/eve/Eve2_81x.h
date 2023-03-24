@@ -151,7 +151,7 @@ extern "C"
 
 // Definitions for EVE coprocessor command buffer
 #define FT_DL_SIZE (8 * 1024)       // 8KB Display List buffer size
-#define FT_CMD_FIFO_SIZE (4 * 1024) // 4KB coprocessor Fifo size
+#define FT_CMD_FIFO_SIZE (4096U)    // 4KB coprocessor Fifo size
 #define FT_CMD_SIZE (4)             // 4 byte per coprocessor command of EVE
 
 // Memory base addresses
