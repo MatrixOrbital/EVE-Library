@@ -2,8 +2,8 @@
 
 This repository contains:
 
-* EVE C Library
-  *EVE-Library/src/eve
+* EVE C Library for BT815, BT816, BT817, BT818
+  * EVE-Library/src/eve
   
 * Demo Code: Basic EVE Demo and PNG Transparency Demo
   * EVE-Library/src/demos
