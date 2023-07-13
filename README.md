@@ -68,8 +68,8 @@ The sample code is provided as a cmake based project, on windows all dependencie
 
 for both Windows and Linux: 
 ```
-git clone https://github.com/MatrixOrbital/Eve-Sample-Code.git
-cd Eve-Sample-Code
+git clone https://github.com/MatrixOrbital/EVE-Library.git
+cd EVE-Library
 mkdir build
 cd build
 cmake ..
