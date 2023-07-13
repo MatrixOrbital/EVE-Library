@@ -14,7 +14,7 @@ This repository contains:
 ------------------------------------------------------------------
 ## Basic EVE Demo
 
-A quick and easy sanity check to ensure that your Matrix Orbital EVE3 or EVE4 SPI TFT Display and touch hardware works properly. 
+A quick and easy sanity check to ensure that your Matrix Orbital EVE3 or EVE4 SPI TFT Display and Touch works properly. 
 
 **Hardware Requirements** 
 
