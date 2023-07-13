@@ -1,4 +1,4 @@
-# EVE Library and Demo Software for Windows and Linux
+# EVE Library and Example Software for Windows and Linux
 
 This repository contains:
 
