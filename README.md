@@ -32,6 +32,7 @@ https://www.matrixorbital.com/ftdi-eve/eve-bt817-bt818
 https://www.matrixorbital.com/ftdi-eve/eve-bt815-bt816
 
 **AND**
+
 You will require an USB to SPI bridge OR an USB version of the EVE display:
 
 An EVE2-USB2SPI-KIT-A Bridge
