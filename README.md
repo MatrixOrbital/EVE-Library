@@ -72,7 +72,7 @@ cmake --build .
 ```
 **Running**
 
-Select the binary generated for your specific EVE2, EVE3 or EVE4 variant to test both the TFT and touch functionality of your display
+Select the binary generated for your specific EVE3 or EVE4 variant to test both the TFT and touch functionality of your display
 
 1. Select [**EVE3**](https://www.matrixorbital.com/ftdi-eve/eve-bt815-bt816) or [**EVE4**](https://www.matrixorbital.com/ftdi-eve/eve-bt817-bt818)
 
