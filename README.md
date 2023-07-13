@@ -14,7 +14,7 @@ This repository contains:
 ------------------------------------------------------------------
 ## Basic EVE Demo
 
-A quick and easy sanity check to ensure that your Matrix Orbital EVE2, EVE3, EVE3x or EVE4 SPI TFT Display and touch hardware works properly. 
+A quick and easy sanity check to ensure that your Matrix Orbital EVE3 or EVE4 SPI TFT Display and touch hardware works properly. 
 
 **Hardware Requirements** 
 
@@ -30,12 +30,6 @@ https://www.matrixorbital.com/ftdi-eve/eve-bt817-bt818
 **EVE3 & EVE3x SPI TFT** - Uses BT815/BT816 Graphics controller
 
 https://www.matrixorbital.com/ftdi-eve/eve-bt815-bt816
-
-**OR**
-
-**EVE2 SPI TFT** - Uses FT812/FT813 Graphics Controller
-
-https://www.matrixorbital.com/ftdi-eve/eve-ft812
 
 **AND**
 You will require an USB to SPI bridge OR an USB version of the EVE display:
@@ -79,7 +73,7 @@ cmake --build .
 
 Select the binary generated for your specific EVE2, EVE3 or EVE4 variant to test both the TFT and touch functionality of your display
 
-1. Select [**EVE2**](https://www.matrixorbital.com/ftdi-eve/eve-ft812) or [**EVE3**](https://www.matrixorbital.com/ftdi-eve/eve-bt815-bt816) or [**EVE4**](https://www.matrixorbital.com/ftdi-eve/eve-bt817-bt818)
+1. Select [**EVE3**](https://www.matrixorbital.com/ftdi-eve/eve-bt815-bt816) or [**EVE4**](https://www.matrixorbital.com/ftdi-eve/eve-bt817-bt818)
 
 2. Select your display size:
 
@@ -106,7 +100,7 @@ Note: for Linux depending on your operating system normal users may not have acc
 
 **RUN THE EXE**
 
-Please note, if you do not have the USB2SPI module and an EVE2/3/4 display attached, nothing will happen.
+Please note, if you do not have the USB2SPI module and an EVE display attached, nothing will happen.
 ![alt text](https://raw.githubusercontent.com/MatrixOrbital/Basic-EVE-Demo/master/Screens/Basic-EVE-Demo-5.png)
 
 If you have a touch screen, TPR or TPC, you will need to calibrate the touch screen by pressing the dots. After the calibration is complete, you will see Matrix Orbital with a blue circle. If you press the circle it will enlarge.
