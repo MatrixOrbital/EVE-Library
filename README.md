@@ -1,10 +1,15 @@
-# Windows and Linux EVE2, EVE3 AND EVE4 TEST DEMO SOFTWARE
+# EVE Library and Demo Software for Windows and Linux
 
-A quick and easy sanity check to ensure that your Matrix Orbital EVE2, EVE3, EVE3x or EVE4 SPI TFT Display and touch hardware works properly. 
+This repository contains:
 
-Support Tool
+* EVE Library
+* Demo Code
+* USB2SPI Bridge Code
 
 ------------------------------------------------------------------
+## Basic EVE Demo
+
+A quick and easy sanity check to ensure that your Matrix Orbital EVE2, EVE3, EVE3x or EVE4 SPI TFT Display and touch hardware works properly. 
 
 **Hardware Requirements** 
 
