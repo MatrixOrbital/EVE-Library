@@ -2,9 +2,14 @@
 
 This repository contains:
 
-* EVE Library
-* Demo Code
+* EVE C Library
+  *EVE-Library/src/eve
+  
+* Demo Code: Basic EVE Demo and PNG Transparency Demo
+  * EVE-Library/src/demos
+ 
 * USB2SPI Bridge Code
+  * EVE-Library/src/usb_bridge/
 
 ------------------------------------------------------------------
 ## Basic EVE Demo
