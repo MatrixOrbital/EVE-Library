@@ -1,0 +1,7 @@
+BinPackArguments: false
+BinPackParameters: false
+ColumnLimit: 99
+BreakBeforeBraces: Allman
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: None
+

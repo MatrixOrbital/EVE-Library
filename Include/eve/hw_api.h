@@ -27,7 +27,7 @@ extern "C"
   void HAL_Delay(uint32_t milliSeconds);
 
   /* Gives an opertunity to reset the EVE hardware */
-  void HAL_Eve_Reset_HW(void);
+  int HAL_Eve_Reset_HW(void);
 
   /* Cleans up and resources allocated */
   void HAL_Close(void);

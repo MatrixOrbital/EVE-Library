@@ -1,5 +1,6 @@
 #define DISPLAY_70 1
 #define DISPLAY_50 2
+#define DISPLAY_50I 2
 #define DISPLAY_43 3
 #define DISPLAY_39 4
 #define DISPLAY_38 5
@@ -9,8 +10,8 @@
 #define DISPLAY_101 9
 #define DISPLAY_70I 10
 #define DISPLAY_24 11
-#define DISPLAY_39I 12
-#define DISPLAY_70I_WG 13
+#define DISPLAY_70I_WG 12
+#define DISPLAY_43_800480 13
 
 #define BOARD_EVE2 1
 #define BOARD_EVE3 2

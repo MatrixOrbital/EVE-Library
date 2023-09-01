@@ -60,10 +60,14 @@ void ClearScreen(void)
 
 int main()
 {
-  FT81x_Init(DEMO_DISPLAY,
-             DEMO_BOARD,
-             DEMO_TOUCH); // Initialize the EVE graphics controller. Make sure to define which
-                          // display you are using in the MatrixEveConf.h
+  // Initialize the EVE graphics controller. Make sure to define which display
+  // you are using in the MatrixEveConf.h
+  if (FT81x_Init(DEMO_DISPLAY, DEMO_BOARD, DEMO_TOUCH) <= 1)
+  {
+    printf("ERROR: Eve not detected.\n");
+    return -1;
+  }
+
   ClearScreen(); // Clear any remnants in the RAM
 
   // If you are using a touch screen, make sure to define what

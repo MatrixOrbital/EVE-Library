@@ -150,9 +150,9 @@ extern "C"
 #define ANIM_ONCE 0UL
 
 // Definitions for EVE coprocessor command buffer
-#define FT_DL_SIZE (8 * 1024)       // 8KB Display List buffer size
-#define FT_CMD_FIFO_SIZE (4096U)    // 4KB coprocessor Fifo size
-#define FT_CMD_SIZE (4)             // 4 byte per coprocessor command of EVE
+#define FT_DL_SIZE (8 * 1024)    // 8KB Display List buffer size
+#define FT_CMD_FIFO_SIZE (4096U) // 4KB coprocessor Fifo size
+#define FT_CMD_SIZE (4)          // 4 byte per coprocessor command of EVE
 
 // Memory base addresses
 #define RAM_G 0x0
@@ -407,8 +407,14 @@ extern "C"
   extern uint16_t FifoWriteLocation;
 
   // Function Prototypes
+
+  // FT81x_Init return values
+  //    0 Hardware reset failed
+  //    1 Hardware reset OK, but no EVE detected on the SPI bus
+  // else the chipID of the EVE IC that was detected.
+
   int EVE_EXPORT FT81x_Init(int display, int board, int touch);
-  void EVE_EXPORT Eve_Reset(void);
+  int EVE_EXPORT Eve_Reset(void);
   void EVE_EXPORT Cap_Touch_Upload(void);
 
   void EVE_EXPORT HostCommand(uint8_t HostCommand);

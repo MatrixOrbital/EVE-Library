@@ -17,7 +17,10 @@ FT_HANDLE GetFTDIHandle()
 void HAL_Close(void)
 {
   if (handle)
+  {
     SPI_CloseChannel(handle);
+    handle = NULL;
+  }
 }
 
 void HAL_SPI_Enable(void)
@@ -74,15 +77,15 @@ void HAL_Delay(uint32_t milliSeconds)
   usleep(milliSeconds * 1000);
 #endif
 }
-FT_STATUS READ_CBUS(FT_HANDLE handle, unsigned char *result);
-FT_STATUS SETUP_CBUS(FT_HANDLE handle);
-void HAL_Eve_Reset_HW(void)
+
+int HAL_Eve_Reset_HW(void)
 {
   uint32_t total_channels;
 #ifndef _MSC_VER
   FT_SetVIDPID(0x1b3d, 0x0200);
 #endif
   Init_libMPSSE();
+  HAL_Close();
   FT_STATUS result = SPI_GetNumChannels(&total_channels);
   printf("channels found : %d\n", total_channels);
   const char *channel = getenv("SPICHANNEL");
@@ -92,7 +95,7 @@ void HAL_Eve_Reset_HW(void)
     ichan = atoi(channel);
   }
 
-  if ((int)total_channels > ichan)
+  if (total_channels > ichan)
   {
     FT_DEVICE_LIST_INFO_NODE devList;
     SPI_GetChannelInfo(ichan, &devList);
@@ -116,13 +119,13 @@ void HAL_Eve_Reset_HW(void)
     else
     {
       printf("Unable to open USB->SPI Bridge\n");
-      exit(1);
+      return 0;
     }
   }
   else
   {
     printf("USB->SPI Bridge not found.");
-    exit(1);
+    return 0;
   }
 
   // reset the EVE by toggling PD pin (GPIO 7 of the FT232H) 0 to 1
@@ -130,4 +133,6 @@ void HAL_Eve_Reset_HW(void)
   HAL_Delay(20);
 
   FT_WriteGPIO(handle, (1 << FT800_PD_N) | 0x3B, (1 << FT800_PD_N) | 0x08); // PDN set to 1
+  HAL_Delay(20);
+  return 1;
 }

@@ -225,6 +225,27 @@ int FT81x_Init(int display, int board, int touch)
     CSPREAD = 1;
     DITHER = 1;
     break;
+  case DISPLAY_43_800480:
+    DWIDTH = 800;
+    DHEIGHT = 480;
+    PIXVOFFSET = 0;
+    PIXHOFFSET = 0;
+    HCYCLE = 977;
+    HOFFSET = 176;
+    HSYNC0 = 40;
+    HSYNC1 = 88;
+    VCYCLE = 529;
+    VOFFSET = 48;
+    VSYNC0 = 13;
+    VSYNC1 = 16;
+    PCLK = 2;
+    SWIZZLE = 0;
+    PCLK_POL = 1;
+    HSIZE = 800;
+    VSIZE = 480;
+    CSPREAD = 0;
+    DITHER = 1;
+    break;
   case DISPLAY_39:
     DWIDTH = 480;
     DHEIGHT = 128;
@@ -404,7 +425,8 @@ int FT81x_Init(int display, int board, int touch)
   HOffset = PIXHOFFSET;
   VOffset = PIXVOFFSET;
   Touch = touch;
-  Eve_Reset(); // Hard reset of the EVE chip
+  if (!Eve_Reset()) // Hard reset of the EVE chip
+    return 0;
 
   // Wakeup EVE
   if (board >= BOARD_EVE3)
@@ -414,14 +436,25 @@ int FT81x_Init(int display, int board, int touch)
   HostCommand(HCMD_ACTIVE);
   HAL_Delay(300);
 
-  do
+  for (int loop = 0; loop < 50; loop++)
   {
     Ready = Cmd_READ_REG_ID();
-  } while (!Ready);
-  do
+    if (Ready)
+      break;
+    HAL_Delay(5);
+  }
+  if (!Ready)
+    return 1; // bridge detected but no eve found
+
+  for (int loop = 0; loop < 50; loop++)
   {
     Ready = rd16(REG_CPU_RESET);
-  } while (!Ready);
+    if (Ready)
+      break;
+    HAL_Delay(5);
+  }
+  if (!Ready)
+    return 1; // bridge detected but no eve found
 
   //  Log("EVE now ACTIVE\n");         //
 
@@ -500,7 +533,7 @@ int FT81x_Init(int display, int board, int touch)
     {
       Cap_Touch_Upload();
     }
-    if (board == BOARD_EVE4 && DISPLAY_70I_WG)
+    if (board == BOARD_EVE4 && display == DISPLAY_70I_WG)
     {
       UploadTouchFirmware(Touch70I_WG, sizeof(Touch70I_WG));
     }
@@ -530,13 +563,13 @@ int FT81x_Init(int display, int board, int touch)
   wr32(RAM_DL + 8, DISPLAY());
   wr8(REG_DLSWAP + RAM_REG, DLSWAP_FRAME); // Swap display lists
   wr8(REG_PCLK + RAM_REG, PCLK);           // After this display is visible on the TFT
-  return 1;
+  return Ready;
 }
 
 // Reset EVE chip via the hardware PDN line
-void Eve_Reset(void)
+int Eve_Reset(void)
 {
-  HAL_Eve_Reset_HW();
+  return HAL_Eve_Reset_HW();
 }
 
 // Upload Goodix Calibration file, ex GT911
@@ -1255,9 +1288,9 @@ void Wait4CoProFIFOEmpty(void)
       // EVE is unhappy - needs a paddling.
       uint32_t Patch_Add = rd32(REG_COPRO_PATCH_PTR + RAM_REG);
       wr8(REG_CPU_RESET + RAM_REG, 1);
-      wr8(REG_CMD_READ + RAM_REG, 0);
-      wr8(REG_CMD_WRITE + RAM_REG, 0);
-      wr8(REG_CMD_DL + RAM_REG, 0);
+      wr16(REG_CMD_READ + RAM_REG, 0);
+      wr16(REG_CMD_WRITE + RAM_REG, 0);
+      wr16(REG_CMD_DL + RAM_REG, 0);
       wr8(REG_CPU_RESET + RAM_REG, 0);
       wr32(REG_COPRO_PATCH_PTR + RAM_REG, Patch_Add);
       HAL_Delay(250); // We already saw one error message and we don't need to see then 1000 times

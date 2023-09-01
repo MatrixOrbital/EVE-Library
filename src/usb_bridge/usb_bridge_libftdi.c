@@ -171,14 +171,14 @@ void HAL_Eve_Reset_HW(void)
 
   unsigned int icmd = 0;
   unsigned char buf[256] = {0};
-  buf[icmd++] = TCK_DIVISOR;
-  buf[icmd++] = 0x05;
-  buf[icmd++] = 0x00;
-  buf[icmd++] = DIS_ADAPTIVE;
-  buf[icmd++] = DIS_3_PHASE;
-  buf[icmd++] = SET_BITS_LOW;
-  buf[icmd++] = pinInitialState;
-  buf[icmd++] = pinDirection;
+  buf[icmd++] = TCK_DIVISOR;     // opcode: set clk divisor
+  buf[icmd++] = 0x05;            // argument: low bit. 6 MHz / (5+1) = 1 MHz
+  buf[icmd++] = 0x00;            // argument: high bit.
+  buf[icmd++] = DIS_ADAPTIVE;    // opcode: disable adaptive clocking
+  buf[icmd++] = DIS_3_PHASE;     // opcode: disable 3-phase clocking
+  buf[icmd++] = SET_BITS_LOW;    // opcode: set low bits (ADBUS[0-7])
+  buf[icmd++] = pinInitialState; // argument: inital pin states
+  buf[icmd++] = pinDirection;    // argument: pin direction
   if (ftdi_write_data(ftdi, buf, icmd) != icmd)
   {
     printf("Bridge setup failed\n");

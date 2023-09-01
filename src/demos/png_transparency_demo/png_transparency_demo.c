@@ -603,11 +603,13 @@ void DrawLogoPNG()
 
 int main()
 {
-  FT81x_Init(
-      DEMO_DISPLAY,
-      DEMO_BOARD,
-      DEMO_TOUCH); // Initialize the EVE graphics controller. Make sure to define which display
-                   // you are using in the MatrixEveConf.h
+  // Initialize the EVE graphics controller. Make sure to define which display
+  // you are using in the MatrixEveConf.h
+  if (FT81x_Init(DEMO_DISPLAY, DEMO_BOARD, DEMO_TOUCH) <= 1)
+  {
+    printf("ERROR: Eve not detected.\n");
+    return -1;
+  }
   DrawLogoPNG(); // Draw the JPG embedded in this code file
   HAL_Close();   // Close the comminucations with the unit.
 }
