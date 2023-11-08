@@ -103,7 +103,7 @@ int HAL_Eve_Reset_HW(void)
     ChannelConfig channelConf; // channel configuration
     FT_STATUS status;
     /* configure the spi settings */
-    channelConf.ClockRate = 1000 * 1000;
+    channelConf.ClockRate = 12 * 1000 * 1000;
     channelConf.LatencyTimer = 2;
     channelConf.configOptions =
         SPI_CONFIG_OPTION_MODE0 | SPI_CONFIG_OPTION_CS_DBUS3 | SPI_CONFIG_OPTION_CS_ACTIVELOW;

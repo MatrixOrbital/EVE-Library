@@ -1,17 +1,9 @@
 #ifdef _MSC_VER
 #include <conio.h>
 #endif
-#include "Eve2_81x.h"
-#include "MatrixEve2Conf.h"
-#include "ST7789V.h"
+#include "eve.h"
 #include "hw_api.h"
 #include <stdio.h>
-/****************************************************************************
- *                             IMPORTANT NOTICE                              *
- * Please make sure to configure the display timing values and define what   *
- * touch variant you are using in the MatrixEve2Conf.h file.                 *
- *                                                                           *
- ****************************************************************************/
 
 uint8_t matrix_orbital_png[] = {
     0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
@@ -587,7 +579,7 @@ void DrawLogoPNG()
 
   // Place the bitmap in the center of the screen
   int32_t left = (Display_Width() - width) / 2;
-  int32_t top = (Display_Height() - height) / 2;
+  int32_t top = Display_VOffset() + (Display_Height() - height) / 2;
   Send_CMD(VERTEXFORMAT(0)); // Setup VERTEX2F to take pixel coordinates
   Send_CMD(BEGIN(BITMAPS));  // Begin bitmap placement
   Send_CMD(VERTEX2F(left,
@@ -603,9 +595,8 @@ void DrawLogoPNG()
 
 int main()
 {
-  // Initialize the EVE graphics controller. Make sure to define which display
-  // you are using in the MatrixEveConf.h
-  if (FT81x_Init(DEMO_DISPLAY, DEMO_BOARD, DEMO_TOUCH) <= 1)
+  // Initialize the EVE graphics controller
+  if (EVE_Init(DEMO_DISPLAY, DEMO_BOARD, DEMO_TOUCH) <= 1)
   {
     printf("ERROR: Eve not detected.\n");
     return -1;

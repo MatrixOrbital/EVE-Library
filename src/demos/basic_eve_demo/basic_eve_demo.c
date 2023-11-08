@@ -1,41 +1,49 @@
 #ifdef _MSC_VER
 #include <conio.h>
 #endif
-#include "Eve2_81x.h"
-#include "MatrixEve2Conf.h"
-#include "ST7789V.h"
+#include "eve.h"
 #include "hw_api.h"
-
-/****************************************************************************
- *                             IMPORTANT NOTICE                              *
- * Please make sure to configure the display timing values and define what   *
- * touch variant you are using in the MatrixEve2Conf.h file.                 *
- *                                                                           *
- ****************************************************************************/
 
 // MakeScreen_MatrixOrbital draws a blue dot in the center screen, along
 // with the text "MATRIX ORBITAL"
 void MakeScreen_MatrixOrbital(uint8_t DotSize)
 {
-  Send_CMD(CMD_DLSTART);              // Start a new display list
-  Send_CMD(VERTEXFORMAT(0));          // setup VERTEX2F to take pixel coordinates
-  Send_CMD(CLEAR_COLOR_RGB(0, 0, 0)); // Determine the clear screen color
-  Send_CMD(CLEAR(1, 1, 1));           // Clear the screen and the curren display list
-  Send_CMD(COLOR_RGB(26, 26, 192));   // change colour to blue
-  Send_CMD(POINT_SIZE(DotSize * 16)); // set point size to DotSize pixels. Points = (pixels x 16)
-  Send_CMD(BEGIN(POINTS));            // start drawing point
-  Send_CMD(TAG(1));                   // Tag the blue dot with a touch ID
-  Send_CMD(VERTEX2F(Display_Width() / 2, Display_Height() / 2)); // place blue point
-  Send_CMD(END());                                               // end drawing point
-  Send_CMD(COLOR_RGB(255, 255, 255));                            // Change color to white for text
+  // Start a new display list
+  Send_CMD(CMD_DLSTART);
+  // Setup VERTEX2F to take pixel coordinates
+  Send_CMD(VERTEXFORMAT(0));
+  // Set the clear screen color
+  Send_CMD(CLEAR_COLOR_RGB(0, 0, 0));
+  // Clear the screen
+  Send_CMD(CLEAR(1, 1, 1));
+  // change color to blue
+  Send_CMD(COLOR_RGB(26, 26, 192));
+  // set point size to DotSize pixels. Points = (pixels x 16)
+  Send_CMD(POINT_SIZE(DotSize * 16));
+  // start drawing a point
+  Send_CMD(BEGIN(POINTS));
+  // Tag the blue dot with a touch ID of 1
+  Send_CMD(TAG(1));
+  // place blue point in the center of the screen, this is offset by Display_VOffset() since
+  // some displays like the 38 have to be driven at a higher resolution than what is visible
+  // on the physical display, Display_VOffset() will return the first visible line on the display
+  Send_CMD(VERTEX2F(Display_Width() / 2, Display_VOffset() + (Display_Height() / 2)));
+  // end drawing point
+  Send_CMD(END());
+  // Change color to white for text
+  Send_CMD(COLOR_RGB(255, 255, 255));
+  // Write text in the center of the screen
   Cmd_Text(Display_Width() / 2,
-           Display_Height() / 2,
+           Display_VOffset() + (Display_Height() / 2),
            30,
            OPT_CENTER,
-           " MATRIX         ORBITAL"); // Write text in the center of the screen
-  Send_CMD(DISPLAY());                 // End the display list
-  Send_CMD(CMD_SWAP);                  // Swap commands into RAM
-  UpdateFIFO();                        // Trigger the CoProcessor to start processing the FIFO
+           " MATRIX         ORBITAL");
+  // End the display list
+  Send_CMD(DISPLAY());
+  // Swap commands into RAM
+  Send_CMD(CMD_SWAP);
+  // Trigger the CoProcessor to start processing the FIFO
+  UpdateFIFO();
 }
 
 // A calibration screen for the touch digitizer
@@ -60,9 +68,7 @@ void ClearScreen(void)
 
 int main()
 {
-  // Initialize the EVE graphics controller. Make sure to define which display
-  // you are using in the MatrixEveConf.h
-  if (FT81x_Init(DEMO_DISPLAY, DEMO_BOARD, DEMO_TOUCH) <= 1)
+  if (EVE_Init(DEMO_DISPLAY, DEMO_BOARD, DEMO_TOUCH) <= 1)
   {
     printf("ERROR: Eve not detected.\n");
     return -1;
@@ -70,8 +76,6 @@ int main()
 
   ClearScreen(); // Clear any remnants in the RAM
 
-  // If you are using a touch screen, make sure to define what
-  // variant you are using in the MatrixEveConf.h file
   if (Display_Touch() == TOUCH_TPR)
   {
     Calibrate();

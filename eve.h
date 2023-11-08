@@ -32,6 +32,8 @@ extern "C"
 {
 #endif
 
+#include "displays.h"
+
 #define HCMD_ACTIVE 0x00
 #define HCMD_STANDBY 0x41
 #define HCMD_SLEEP 0x42
@@ -367,6 +369,8 @@ extern "C"
 #define COLOR_RGB(red, green, blue)                                                               \
   ((4UL << 24) | (((red)&255UL) << 16) | (((green)&255UL) << 8) |                                 \
    (((blue)&255UL) << 0)) // COLOR_RGB - FT-PG Section 4.28
+#define COLOR_A(a) ((16UL << 24) | (a & 255UL))
+
 #define VERTEX2II(x, y, handle, cell)                                                             \
   ((2UL << 30) | (((x)&511UL) << 21) | (((y)&511UL) << 12) | (((handle)&31UL) << 7) |             \
    (((cell)&127UL) << 0)) // VERTEX2II - FT-PG Section 4.48
@@ -408,12 +412,13 @@ extern "C"
 
   // Function Prototypes
 
-  // FT81x_Init return values
+  // EVE_Init return values
   //    0 Hardware reset failed
   //    1 Hardware reset OK, but no EVE detected on the SPI bus
   // else the chipID of the EVE IC that was detected.
+  // The Display, board and touch defines can be found in displays.h
+  int EVE_EXPORT EVE_Init(int display, int board, int touch);
 
-  int EVE_EXPORT FT81x_Init(int display, int board, int touch);
   int EVE_EXPORT Eve_Reset(void);
   void EVE_EXPORT Cap_Touch_Upload(void);
 
@@ -437,6 +442,15 @@ extern "C"
                              uint16_t options,
                              uint16_t val,
                              uint16_t range);
+
+  void EVE_EXPORT Cmd_Progress(uint16_t x,
+                               uint16_t y,
+                               uint16_t w,
+                               uint16_t h,
+                               uint16_t options,
+                               uint16_t val,
+                               uint16_t range);
+
   void EVE_EXPORT Cmd_Spinner(uint16_t x, uint16_t y, uint16_t style, uint16_t scale);
   void EVE_EXPORT Cmd_Gauge(uint16_t x,
                             uint16_t y,

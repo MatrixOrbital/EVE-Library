@@ -2,7 +2,7 @@
 //
 // This library is for the FT812, FT813, BT815, BT816, BT817, BT818
 //
-// This "library" consists of the files "Eve2_81x.c" and "Eve2_81x.h".
+// This "library" consists of the files "Eve2_81x.c" and "eve.h".
 //
 // In persuit of the common goal of simplicity and understandability I find that I am unable to
 // make function prototypes that match Bridgetek example code.  I draw the line between the
@@ -38,12 +38,10 @@
 // Be aware that EVE stores only the offset into the "FIFO" as 16 bits, so any use of the offset
 // requires adding the base address (RAM_CMD 0x308000) to the resultant 32 bit value.
 
-#include "Eve2_81x.h"       // Header for this file with prototypes, defines, and typedefs
-#include "MatrixEve2Conf.h" // Header for display selection
-#include "ST7789V.h"        // For 2.4" and 2.8" displays
-#include "hw_api.h"         // For SPI abstraction
-#include <stdbool.h>        // For true/false
-#include <stdint.h>         // Find integer types like "uint8_t"
+#include "eve.h"     // Header for this file with prototypes, defines, and typedefs
+#include "hw_api.h"  // For SPI abstraction
+#include <stdbool.h> // For true/false
+#include <stdint.h>  // Find integer types like "uint8_t"
 #include <stdio.h>
 
 #define WorkBuffSz 512
@@ -136,8 +134,213 @@ uint32_t Display_VOffset()
   return VOffset;
 }
 
+#define COMMAND 0
+#define DATA 1
+#define CS_ENABLE 0
+#define CS_DISABLE 1
+
+#define CS 0x02
+#define SCL 0x04
+#define SDA 0x08
+
+void GPIOX_WriteBit(uint8_t data, bool state)
+{
+  if (state)
+  {
+    wr8(REG_GPIOX + RAM_REG, (rd8(REG_GPIOX + RAM_REG)) | data);
+  }
+  else
+  {
+    data = ~data;
+    wr8(REG_GPIOX + RAM_REG, (rd8(REG_GPIOX + RAM_REG)) & (data));
+  }
+}
+
+void MO_SPIBB_CS(uint8_t enable)
+{
+  wr16(REG_GPIOX_DIR + RAM_REG, 0x00f7); // set SDA GPIO0 as output
+
+  switch (enable)
+  {
+  case 0:
+    wr8(REG_GPIOX + RAM_REG, (rd8(REG_GPIOX + RAM_REG)) & ~CS);
+    break;
+  case 1:
+    wr8(REG_GPIOX + RAM_REG, (rd8(REG_GPIOX + RAM_REG)) | CS);
+    break;
+  }
+}
+
+void MO_SPIBB_Send(bool type, uint8_t data)
+{
+  unsigned char m = 0x80;
+  uint8_t i;
+
+  wr16(REG_GPIOX_DIR + RAM_REG, 0x80ff);
+  wr16(REG_GPIOX + RAM_REG, 0x80f0);
+
+  if (type == COMMAND)
+  {
+
+    GPIOX_WriteBit(SCL, 0);
+    GPIOX_WriteBit(SDA, 0);
+    GPIOX_WriteBit(SCL, 1);
+  }
+  else if (type == DATA)
+  {
+
+    GPIOX_WriteBit(SCL, 0);
+    GPIOX_WriteBit(SDA, 1);
+    GPIOX_WriteBit(SCL, 1);
+  }
+
+  for (i = 0; i < 8; i++)
+  {
+    GPIOX_WriteBit(SCL, 0);
+    if (data & m)
+    {
+      GPIOX_WriteBit(SDA, 1);
+    }
+    else
+    {
+      GPIOX_WriteBit(SDA, 0);
+    }
+    GPIOX_WriteBit(SCL, 1);
+    m = m >> 1;
+  }
+  GPIOX_WriteBit(SCL, 0);
+}
+
+void MO_ST7789V_init(void)
+{
+  wr16(REG_GPIOX_DIR + RAM_REG, (0x00FF));
+  wr16(REG_GPIOX + RAM_REG, 0x00F7);
+
+  HAL_Delay(100); // 1000
+
+  // the following is from AFY240320A0-2.8INTH data sheet, page 25
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0x11);
+  MO_SPIBB_CS(CS_DISABLE);
+  HAL_Delay(120); // Delay 120ms
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0x36); // MADCTRL
+  MO_SPIBB_Send(DATA, 0x00);    // was 0x80
+  MO_SPIBB_CS(CS_DISABLE);
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0x3a);
+  MO_SPIBB_Send(DATA, 0x66);
+  MO_SPIBB_CS(CS_DISABLE);
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0xB0);
+  MO_SPIBB_Send(DATA, 0x12); // <<-- RGB interface
+  MO_SPIBB_Send(DATA, 0x00);
+  MO_SPIBB_CS(CS_DISABLE);
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0x21);
+  MO_SPIBB_CS(CS_DISABLE);
+
+  //--------------------------------ST7789V Frame rate setting----------------------------------//
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0xb2);
+  MO_SPIBB_Send(DATA, 0x0c);
+  MO_SPIBB_Send(DATA, 0x0c);
+  MO_SPIBB_Send(DATA, 0x00);
+  MO_SPIBB_Send(DATA, 0x33);
+  MO_SPIBB_Send(DATA, 0x33);
+  MO_SPIBB_CS(CS_DISABLE);
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0xb7);
+  MO_SPIBB_Send(DATA, 0x35);
+  MO_SPIBB_CS(CS_DISABLE);
+  //---------------------------------ST7789V Power setting--------------------------------------//
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0xbb);
+  MO_SPIBB_Send(DATA, 0x18); // 1F
+  MO_SPIBB_CS(CS_DISABLE);
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0xc0);
+  MO_SPIBB_Send(DATA, 0x2c);
+  MO_SPIBB_CS(CS_DISABLE);
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0xc2);
+  MO_SPIBB_Send(DATA, 0x01);
+  MO_SPIBB_Send(DATA, 0xFF);
+  MO_SPIBB_CS(CS_DISABLE);
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0xc3);
+  MO_SPIBB_Send(DATA, 0x20); // 12
+  MO_SPIBB_CS(CS_DISABLE);
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0xc4);
+  MO_SPIBB_Send(DATA, 0x20);
+  MO_SPIBB_CS(CS_DISABLE);
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0xc6);
+  MO_SPIBB_Send(DATA, 0x0f);
+  MO_SPIBB_CS(CS_DISABLE);
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0xd0);
+  MO_SPIBB_Send(DATA, 0xa4);
+  MO_SPIBB_Send(DATA, 0xa1);
+  MO_SPIBB_CS(CS_DISABLE);
+  //--------------------------------ST7789V gamma setting--------------------------------------//
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0xe0);
+  MO_SPIBB_Send(DATA, 0xd0);
+  MO_SPIBB_Send(DATA, 0x08);
+  MO_SPIBB_Send(DATA, 0x11);
+  MO_SPIBB_Send(DATA, 0x08);
+  MO_SPIBB_Send(DATA, 0x0c);
+  MO_SPIBB_Send(DATA, 0x15);
+  MO_SPIBB_Send(DATA, 0x39);
+  MO_SPIBB_Send(DATA, 0x33);
+  MO_SPIBB_Send(DATA, 0x50);
+  MO_SPIBB_Send(DATA, 0x36);
+  MO_SPIBB_Send(DATA, 0x13);
+  MO_SPIBB_Send(DATA, 0x14);
+  MO_SPIBB_Send(DATA, 0x29);
+  MO_SPIBB_Send(DATA, 0x2d);
+  MO_SPIBB_CS(CS_DISABLE);
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0xe1);
+  MO_SPIBB_Send(DATA, 0xd0);
+  MO_SPIBB_Send(DATA, 0x08);
+  MO_SPIBB_Send(DATA, 0x10);
+  MO_SPIBB_Send(DATA, 0x08);
+  MO_SPIBB_Send(DATA, 0x06);
+  MO_SPIBB_Send(DATA, 0x06);
+  MO_SPIBB_Send(DATA, 0x39);
+  MO_SPIBB_Send(DATA, 0x44);
+  MO_SPIBB_Send(DATA, 0x51);
+  MO_SPIBB_Send(DATA, 0x0b);
+  MO_SPIBB_Send(DATA, 0x16);
+  MO_SPIBB_Send(DATA, 0x14);
+  MO_SPIBB_Send(DATA, 0x2f);
+  MO_SPIBB_Send(DATA, 0x31);
+  MO_SPIBB_CS(CS_DISABLE);
+
+  MO_SPIBB_CS(CS_ENABLE);
+  MO_SPIBB_Send(COMMAND, 0x29);
+  MO_SPIBB_CS(CS_DISABLE);
+}
+
 // Call this function once at powerup to reset and initialize the EVE chip
-int FT81x_Init(int display, int board, int touch)
+// The Display, board and touch defines can be found in displays.h.
+int EVE_Init(int display, int board, int touch)
 {
   uint32_t Ready = false;
   int DWIDTH;
@@ -162,7 +365,7 @@ int FT81x_Init(int display, int board, int touch)
 
   switch (display)
   {
-  case DISPLAY_70:
+  case DISPLAY_70_800x480:
     DWIDTH = 800;
     DHEIGHT = 480;
     PIXVOFFSET = 0;
@@ -183,7 +386,7 @@ int FT81x_Init(int display, int board, int touch)
     CSPREAD = 0;
     DITHER = 1;
     break;
-  case DISPLAY_50:
+  case DISPLAY_50_800x480:
     DWIDTH = 800;
     DHEIGHT = 480;
     PIXVOFFSET = 0;
@@ -204,7 +407,7 @@ int FT81x_Init(int display, int board, int touch)
     CSPREAD = 0;
     DITHER = 1;
     break;
-  case DISPLAY_43:
+  case DISPLAY_43_480x272:
     DWIDTH = 480;
     DHEIGHT = 272;
     PIXVOFFSET = 0;
@@ -246,40 +449,40 @@ int FT81x_Init(int display, int board, int touch)
     CSPREAD = 0;
     DITHER = 1;
     break;
-  case DISPLAY_39:
+  case DISPLAY_39_480x128:
     DWIDTH = 480;
     DHEIGHT = 128;
-    PIXVOFFSET = 0;
+    PIXVOFFSET = 126;
     PIXHOFFSET = 0;
-    HCYCLE = 524;
-    HOFFSET = 17;
-    HSYNC1 = 27;
-    HSYNC0 = 0;
-    VCYCLE = 288;
-    VOFFSET = 12;
-    VSYNC1 = 8;
-    VSYNC0 = 7;
-    PCLK = 5;
+    HCYCLE = 552;
+    HOFFSET = 71;
+    HSYNC0 = 28;
+    HSYNC1 = 44;
+    VCYCLE = 308;
+    VOFFSET = 35;
+    VSYNC0 = 8;
+    VSYNC1 = 11;
+    PCLK = 6; //
     SWIZZLE = 0;
     PCLK_POL = 1;
     HSIZE = 480;
     VSIZE = 272;
-    CSPREAD = 1;
+    CSPREAD = 0;
     DITHER = 1;
     break;
-  case DISPLAY_38:
+  case DISPLAY_38_480x116:
     DWIDTH = 480;
     DHEIGHT = 116;
-    PIXVOFFSET = 10;
+    PIXVOFFSET = 156;
     PIXHOFFSET = 0;
-    HCYCLE = 524;
-    HOFFSET = 43;
-    HSYNC0 = 0;
-    HSYNC1 = 41;
-    VCYCLE = 292;
-    VOFFSET = 12;
-    VSYNC0 = 152;
-    VSYNC1 = 10;
+    HCYCLE = 527;
+    HOFFSET = 46;
+    HSYNC0 = 1;
+    HSYNC1 = 3;
+    VCYCLE = 291;
+    VOFFSET = 18;
+    VSYNC0 = 4;
+    VSYNC1 = 6;
     PCLK = 5;
     SWIZZLE = 0;
     PCLK_POL = 1;
@@ -288,7 +491,7 @@ int FT81x_Init(int display, int board, int touch)
     CSPREAD = 1;
     DITHER = 1;
     break;
-  case DISPLAY_35:
+  case DISPLAY_35_320x240:
     DWIDTH = 320;
     DHEIGHT = 240;
     PIXVOFFSET = 0;
@@ -309,7 +512,7 @@ int FT81x_Init(int display, int board, int touch)
     CSPREAD = 1;
     DITHER = 1;
     break;
-  case DISPLAY_29:
+  case DISPLAY_29_320x102:
     DWIDTH = 320;
     DHEIGHT = 102;
     PIXVOFFSET = 0;
@@ -330,7 +533,7 @@ int FT81x_Init(int display, int board, int touch)
     CSPREAD = 1;
     DITHER = 1;
     break;
-  case DISPLAY_40:
+  case DISPLAY_40_720x720:
     DWIDTH = 720;
     DHEIGHT = 720;
     PIXVOFFSET = 0;
@@ -351,7 +554,7 @@ int FT81x_Init(int display, int board, int touch)
     CSPREAD = 0;
     DITHER = 0;
     break;
-  case DISPLAY_101:
+  case DISPLAY_101_1280x800:
     DWIDTH = 1280;
     DHEIGHT = 800;
     PIXVOFFSET = 0;
@@ -372,8 +575,8 @@ int FT81x_Init(int display, int board, int touch)
     CSPREAD = 0;
     DITHER = 1;
     break;
-  case DISPLAY_70I:
-  case DISPLAY_70I_WG:
+  case DISPLAY_70_1024x600_WG:
+  case DISPLAY_70_1024x600:
     DWIDTH = 1024;
     DHEIGHT = 600;
     PIXVOFFSET = 0;
@@ -394,7 +597,7 @@ int FT81x_Init(int display, int board, int touch)
     CSPREAD = 0;
     DITHER = 1;
     break;
-  case DISPLAY_24:
+  case DISPLAY_24_320x240:
     DWIDTH = 240;
     DHEIGHT = 320;
     PIXVOFFSET = 0;
@@ -463,7 +666,7 @@ int FT81x_Init(int display, int board, int touch)
   uint16_t ValL = Ready & 0xFFFF;
   Log("Chip ID = 0x%04x%04x\n", ValH, ValL);
 
-  if (display == DISPLAY_101)
+  if (display == DISPLAY_101_1280x800)
   {
     wr32(REG_FREQUENCY + RAM_REG, 80000000); // Configure the system clock to 80MHz
   }
@@ -492,8 +695,10 @@ int FT81x_Init(int display, int board, int touch)
            ~(1 << 15));       // Set REG_GPIOX bit 15 to 0 to turn off the LCD DISP signal
   wr8(REG_PCLK + RAM_REG, 0); // Pixel Clock Output disable
 
-  if (display == DISPLAY_24)
+  if (display == DISPLAY_24_320x240)
+  {
     MO_ST7789V_init();
+  }
 
   // Load parameters of the physical screen to the EVE
   // All of these registers are 32 bits, but most bits are reserved, so only write what is actually
@@ -525,7 +730,7 @@ int FT81x_Init(int display, int board, int touch)
   }
   else if (touch == TOUCH_TPC)
   {
-    if (display == DISPLAY_40)
+    if (display == DISPLAY_40_720x720)
       wr16(REG_TOUCH_CONFIG + RAM_REG, 0x480); // FT6336U touch controller
     else
       wr16(REG_TOUCH_CONFIG + RAM_REG, 0x5d0);
@@ -533,7 +738,7 @@ int FT81x_Init(int display, int board, int touch)
     {
       Cap_Touch_Upload();
     }
-    if (board == BOARD_EVE4 && display == DISPLAY_70I_WG)
+    if (board == BOARD_EVE4 && display == DISPLAY_70_1024x600_WG)
     {
       UploadTouchFirmware(Touch70I_WG, sizeof(Touch70I_WG));
     }
@@ -548,11 +753,15 @@ int FT81x_Init(int display, int board, int touch)
   // wr16(REG_GPIOX + RAM_REG, 0x8000 | (1<<3));       // Enable Disp (if used)
 
   wr16(REG_GPIOX_DIR + RAM_REG, 0xffff); // Make GPIOs output
-  if (display == DISPLAY_101)
+  if (display == DISPLAY_101_1280x800)
+  {
     wr16(REG_GPIOX + RAM_REG,
          0x80f7); // Motor (GPIO 3, active high) is off, speaker (GPIO 2) is on
+  }
   else
+  {
     wr16(REG_GPIOX + RAM_REG, 0x80ff); // Motor (GPIO 3, active low) is off, speaker (GPIO 2) is on
+  }
 
   wr16(REG_PWM_HZ + RAM_REG, 0x00FA); // Backlight PWM frequency
   wr8(REG_PWM_DUTY + RAM_REG, 128);   // Backlight PWM duty (on)
@@ -575,15 +784,82 @@ int Eve_Reset(void)
 // Upload Goodix Calibration file, ex GT911
 void Cap_Touch_Upload(void)
 {
-// This makes the Arduino uno run out of space so sadly
-// we cannot support this.
+  // This makes the Arduino uno run out of space so sadly
+  // we cannot support this.
 #if !defined(__AVR__)
-#include "touch_cap_811.h"
   //---Goodix911 Configuration from AN336
   // Load the TOUCH_DATA_U8 or TOUCH_DATA_U32 array from file “touch_cap_811.h” via the FT81x
   // command buffer RAM_CMD
-  uint8_t CTOUCH_CONFIG_DATA_G911[] = {TOUCH_DATA_U8};
-  CoProWrCmdBuf(CTOUCH_CONFIG_DATA_G911, TOUCH_DATA_LEN);
+  uint8_t CTOUCH_CONFIG_DATA_G911[] = {
+      26,  255, 255, 255, 32,  32,  48,  0,   4,   0,   0,   0,   2,   0,   0,   0,   34,  255,
+      255, 255, 0,   176, 48,  0,   120, 218, 237, 84,  221, 111, 84,  69,  20,  63,  51,  179,
+      93,  160, 148, 101, 111, 76,  5,   44,  141, 123, 111, 161, 11,  219, 154, 16,  9,   16,
+      17,  229, 156, 75,  26,  11,  13,  21,  227, 3,   16,  252, 184, 179, 45,  219, 143, 45,
+      41,  125, 144, 72,  67,  100, 150, 71,  189, 113, 18,  36,  17,  165, 100, 165, 198, 16,
+      32,  17,  149, 196, 240, 128, 161, 16,  164, 38,  54,  240, 0,   209, 72,  130, 15,  38,
+      125, 48,  66,  82,  30,  76,  19,  31,  172, 103, 46,  139, 24,  255, 4,   227, 157, 204,
+      156, 51,  115, 102, 206, 231, 239, 220, 5,   170, 94,  129, 137, 75,  194, 216, 98,  94,
+      103, 117, 115, 121, 76,  131, 177, 125, 89,  125, 82,  123, 60,  243, 58,  142, 242, 204,
+      185, 243, 188, 118, 156, 227, 155, 203, 238, 238, 195, 251, 205, 229, 71,  92,  28,  169,
+      190, 184, 84,  143, 113, 137, 53,  244, 103, 181, 237, 87,  253, 113, 137, 233, 48,  12,
+      198, 165, 181, 104, 139, 25,  84,  253, 155, 114, 74,  191, 0,   54,  138, 163, 12,  62,
+      131, 207, 129, 23,  217, 34,  91,  31,  128, 65,  246, 163, 175, 213, 8,   147, 213, 107,
+      35,  203, 94,  108, 3,   111, 40,  171, 83,  24,  15,  165, 177, 222, 116, 97,  23,  188,
+      140, 206, 150, 42,  102, 181, 87,  78,  86,  182, 170, 134, 215, 241, 121, 26,  243, 252,
+      2,   76,  115, 217, 139, 222, 206, 173, 136, 132, 81,  61,  35,  185, 39,  113, 23,  46,
+      199, 76,  178, 54,  151, 183, 224, 0,   40,  189, 28,  149, 182, 58,  131, 79,  152, 30,
+      76,  34,  98,  234, 162, 216, 133, 141, 102, 39,  170, 40,  192, 101, 53,  201, 146, 191,
+      37,  77,  44,  177, 209, 74,  211, 5,   206, 187, 5,   6,   216, 47,  53,  96,  123, 22,
+      50,  103, 251, 192, 84,  17,  74,  227, 185, 56,  106, 51,  91,  161, 96,  182, 163, 48,
+      171, 141, 139, 65,  152, 66,  66,  11,  102, 43,  158, 75,  36,  80,  147, 184, 147, 139,
+      112, 17,  235, 216, 103, 111, 239, 245, 92,  10,  175, 194, 40,  44,  58,  125, 5,   59,
+      112, 50,  103, 245, 4,   78,  192, 5,   156, 194, 51,  60,  191, 134, 75,  110, 173, 237,
+      46,  192, 121, 156, 192, 115, 184, 218, 120, 67,  63,  115, 46,  11,  102, 10,  97,  232,
+      50,  235, 114, 182, 148, 118, 178, 41,  188, 12,  135, 77,  202, 124, 12,  96,  238, 35,
+      161, 234, 189, 129, 23,  249, 212, 139, 230, 25,  53,  48,  205, 52,  93,  163, 117, 53,
+      154, 170, 81,  85,  163, 178, 70,  69,  66,  167, 241, 14,  46,  241, 1,   226, 136, 152,
+      179, 197, 59,  184, 148, 254, 49,  132, 48,  15,  176, 137, 192, 76,  131, 196, 105, 104,
+      162, 86,  81,  160, 165, 255, 26,  173, 162, 137, 86,  145, 210, 183, 192, 55,  175, 194,
+      211, 60,  91,  120, 230, 184, 174, 27,  41,  131, 155, 40,  224, 29,  87,  179, 232, 16,
+      55,  55,  7,   165, 147, 81,  23,  165, 49,  101, 54,  224, 75,  180, 81,  108, 18,  29,
+      226, 69,  225, 110, 175, 224, 42,  212, 25,  47,  130, 193, 110, 234, 192, 215, 252, 56,
+      74,  162, 24,  46,  251, 174, 54,  106, 68,  245, 14,  9,   155, 160, 22,  120, 207, 104,
+      240, 29,  90,  178, 140, 28,  24,  220, 47,  166, 112, 61,  251, 208, 192, 111, 56,  239,
+      238, 93,  255, 251, 62,  99,  32,  193, 75,  61,  190, 235, 123, 229, 110, 218, 194, 85,
+      79,  225, 59,  98,  20,  238, 227, 235, 220, 11,  221, 149, 25,  180, 116, 194, 159, 111,
+      96,  192, 24,  213, 59,  139, 179, 156, 215, 69,  230, 19,  24,  35,  135, 117, 206, 171,
+      206, 162, 67,  129, 234, 61,  235, 11,  104, 103, 84,  64,  223, 167, 254, 40,  163, 101,
+      92,  84,  43,  150, 46,  249, 219, 205, 7,   116, 11,  91,  104, 61,  57,  75,  223, 8,
+      48,  25,  28,  119, 252, 222, 113, 49,  86,  249, 74,  180, 211, 156, 181, 61,  215, 168,
+      157, 7,   251, 199, 150, 242, 250, 91,  58,  132, 94,  121, 7,   53,  151, 139, 98,  6,
+      165, 153, 69,  214, 32,  110, 211, 100, 101, 31,  89,  45,  81,  98,  23,  205, 205, 197,
+      209, 109, 186, 198, 35,  141, 191, 249, 25,  60,  132, 223, 153, 251, 98,  20,  239, 146,
+      139, 20,  217, 250, 41,  250, 137, 58,  177, 90,  57,  79,  51,  108, 233, 20,  253, 194,
+      187, 49,  222, 205, 114, 141, 96,  48,  175, 219, 107, 54,  111, 138, 22,  154, 103, 108,
+      79,  58,  252, 179, 178, 79,  164, 195, 2,   153, 36,  39,  170, 199, 201, 167, 197, 85,
+      106, 8,   59,  177, 81,  46,  56,  2,   230, 75,  114, 17,  55,  112, 188, 65,  208, 137,
+      77,  114, 10,  115, 55,  58,  208, 197, 173, 122, 87,  6,   140, 110, 42,  208, 124, 163,
+      70,  108, 241, 104, 18,  245, 98,  214, 187, 134, 53,  42,  221, 22,  182, 133, 211, 116,
+      148, 177, 194, 209, 192, 85,  90,  199, 58,  55,  203, 2,   229, 19,  137, 187, 161, 228,
+      154, 112, 203, 145, 125, 244, 188, 220, 118, 228, 41,  201, 181, 41,  195, 144, 215, 183,
+      51,  80,  250, 21,  217, 16,  217, 200, 235, 109, 227, 188, 122, 218, 142, 60,  170, 224,
+      112, 240, 184, 130, 229, 224, 113, 5,   223, 148, 163, 80,  165, 183, 130, 187, 132, 116,
+      64,  238, 161, 85,  220, 115, 139, 205, 98,  227, 244, 29,  102, 125, 7,   37,  243, 123,
+      223, 11,  26,  92,  63,  243, 116, 61,  191, 138, 123, 244, 160, 84,  186, 74,  31,  5,
+      174, 247, 119, 135, 199, 248, 253, 135, 242, 97,  102, 145, 190, 144, 14,  85,  238, 221,
+      231, 193, 158, 48,  205, 25,  120, 248, 15,  220, 29,  158, 9,   70,  185, 30,  103, 229,
+      33,  254, 23,  237, 160, 172, 62,  193, 90,  222, 224, 232, 14,  200, 56,  90,  104, 142,
+      227, 120, 110, 6,   21,  211, 203, 65,  150, 99,  151, 220, 247, 87,  164, 50,  159, 49,
+      239, 234, 58,  142, 0,   109, 108, 123, 18,  79,  227, 36,  100, 248, 222, 205, 96,  127,
+      120, 26,  171, 228, 69,  63,  36,  17,  252, 200, 17,  116, 242, 187, 227, 88,  143, 247,
+      2,   75,  191, 6,   130, 59,  188, 11,  55,  240, 31,  243, 122, 152, 226, 183, 207, 154,
+      73,  188, 39,  219, 43,  105, 222, 87,  41,  143, 141, 140, 175, 73,  112, 184, 252, 61,
+      184, 16,  90,  250, 35,  168, 82,  119, 176, 57,  116, 94,  200, 150, 22,  190, 179, 44,
+      104, 12,  235, 84,  149, 102, 252, 89,  154, 193, 99,  228, 106, 242, 125, 248, 64,  194,
+      255, 223, 127, 242, 83,  11,  255, 2,   70,  214, 226, 128, 0,   0,   26,  255, 255, 255,
+      20,  33,  48,  0,   4,   0,   0,   0,   15,  0,   0,   0,   26,  255, 255, 255, 32,  32,
+      48,  0,   4,   0,   0,   0,   0,   0,   0,   0};
+  CoProWrCmdBuf(CTOUCH_CONFIG_DATA_G911, sizeof(CTOUCH_CONFIG_DATA_G911));
   // Execute the commands till completion
   UpdateFIFO();
   Wait4CoProFIFOEmpty();
@@ -806,6 +1082,16 @@ uint8_t Cmd_READ_REG_ID(void)
 
 // ******************** Screen Object Creation Coprocessor Command Functions
 // ******************************
+
+void Cmd_Progress(
+    uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t options, uint16_t val, uint16_t range)
+{
+  Send_CMD(CMD_PROGRESS);
+  Send_CMD(((uint32_t)y << 16) | x);
+  Send_CMD(((uint32_t)h << 16) | w);
+  Send_CMD(((uint32_t)val << 16) | options);
+  Send_CMD((uint32_t)range);
+}
 
 // *** Draw Slider - FT81x Series Programmers Guide Section 5.38
 // *************************************************
@@ -1137,8 +1423,8 @@ void Calibrate_Manual(uint16_t Width, uint16_t Height, uint16_t V_Offset, uint16
         touchY[count] = touchValue & 0x03FF;         // Raw Touchscreen Y coordinate
 
         // Log("\ndisplay x[%d]: %ld display y[%d]: %ld\n", count, displayX[count], count,
-        // displayY[count]); Log("touch x[%d]: %ld touch y[%d]: %ld\n", count, touchX[count], count,
-        // touchY[count]);
+        // displayY[count]); Log("touch x[%d]: %ld touch y[%d]: %ld\n", count, touchX[count],
+        // count, touchY[count]);
 
         count++;
       }
@@ -1264,7 +1550,6 @@ void Wait4CoProFIFOEmpty(void)
 {
   uint16_t ReadReg;
   uint8_t ErrChar;
-  uint8_t buffy[2];
   do
   {
     ReadReg = rd16(REG_CMD_READ + RAM_REG);
@@ -1279,8 +1564,7 @@ void Wait4CoProFIFOEmpty(void)
         // Get the error character and display it
         ErrChar = rd8(RAM_ERR_REPORT + Offset);
         Offset++;
-        sprintf(buffy, "%c", ErrChar);
-        Log(buffy);
+        Log("%c", ErrChar);
       } while ((ErrChar != 0) &&
                (Offset < 128)); // When the last stuffed character was null, we are done
       Log("\n");

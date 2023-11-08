@@ -1,0 +1,26 @@
+#ifndef __DISPLAYS_H
+#define __DISPLAYS_H
+
+#define DISPLAY_70_800x480 1
+#define DISPLAY_50_800x480 2
+#define DISPLAY_43_480x272 3
+#define DISPLAY_39_480x128 4
+#define DISPLAY_38_480x116 5
+#define DISPLAY_35_320x240 6
+#define DISPLAY_29_320x102 7
+#define DISPLAY_40_720x720 8
+#define DISPLAY_101_1280x800 9
+#define DISPLAY_70_1024x600 10
+#define DISPLAY_24_320x240 11
+#define DISPLAY_70_1024x600_WG 12
+#define DISPLAY_43_800480 13
+
+#define BOARD_EVE2 1
+#define BOARD_EVE3 2
+#define BOARD_EVE4 3
+
+#define TOUCH_TPN 0
+#define TOUCH_TPR 1
+#define TOUCH_TPC 2
+
+#endif
