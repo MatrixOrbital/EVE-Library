@@ -3,10 +3,15 @@
 This repository contains:
 
 * EVE C Library for BT815, BT816, BT817, BT818
-  * EVE-Library/src/eve
+  * displays.h
+  * eve.c
+  * eve.h
   
 * Demo Code: Basic EVE Demo and PNG Transparency Demo
   * EVE-Library/src/demos
+ 
+* Releases
+  * Executable files for the Demo Code for Windows
  
 * USB2SPI Bridge Code
   * EVE-Library/src/usb_bridge/
