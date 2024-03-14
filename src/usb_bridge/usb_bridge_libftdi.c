@@ -146,20 +146,20 @@ void HAL_Delay(uint32_t milliSeconds)
   usleep(milliSeconds * 1000);
 }
 
-void HAL_Eve_Reset_HW(void)
+int HAL_Eve_Reset_HW(void)
 {
   ftdi = ftdi_new();
   if (!ftdi)
   {
     printf("Failed to initialize USB bridge\n");
-    exit(1);
+    return 0;
   }
 
   int ftdi_status = ftdi_usb_open(ftdi, 0x1b3d, 0x200);
   if (ftdi_status != 0)
   {
     printf("Can't open USB bridge, error %s\n", ftdi_get_error_string(ftdi));
-    exit(1);
+    return 0;
   }
   printf("Bridge opened successfully!\n");
   ftdi_usb_reset(ftdi);
@@ -183,11 +183,12 @@ void HAL_Eve_Reset_HW(void)
   {
     printf("Bridge setup failed\n");
     ftdi_usb_close(ftdi);
-    exit(1);
+    return 0;
   }
   printf("Setup complete!\n");
   HAL_RST_Enable();
   HAL_Delay(20);
   HAL_RST_Disable();
   HAL_Delay(20);
+  return 1;
 }
