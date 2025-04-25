@@ -2,7 +2,7 @@
 //
 // This library is for the FT812, FT813, BT815, BT816, BT817, BT818
 //
-//Supported Platforms such as but not limited to:
+// Supported Platforms such as but not limited to:
 // Arduino (AVR, SAM, etc.)
 // STM32 (Multiple series support)
 // NXP (Kinetis, iMX RT, etc.)
