@@ -11,6 +11,7 @@ This repository contains:
   * Arduino (AVR, SAM, etc.)
   * STM32 (Multiple series support)
   * NXP (Kinetis, iMX RT, etc.)
+  * Raspberry Pi (RP2040, RP2350, RP2354)
 
 * Demo Code: Basic EVE Demo and PNG Transparency Demo
   * EVE-Library/src/demos
