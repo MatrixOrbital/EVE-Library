@@ -7,6 +7,11 @@ This repository contains:
   * eve.c
   * eve.h
   
+* Supported Platforms such as but not limited to:
+  * Arduino (AVR, SAM, etc.)
+  * STM32 (Multiple series support)
+  * NXP (Kinetis, iMX RT, etc.)
+
 * Demo Code: Basic EVE Demo and PNG Transparency Demo
   * EVE-Library/src/demos
  
