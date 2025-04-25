@@ -1,4 +1,4 @@
-# EVE Library and Example Software for Windows and Linux
+# EVE Library for STM32, NXP, Arduino, Raspberry Pi, etc and Example Software for Windows and Linux
 
 This repository contains:
 
