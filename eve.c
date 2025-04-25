@@ -2,7 +2,13 @@
 //
 // This library is for the FT812, FT813, BT815, BT816, BT817, BT818
 //
-// This "library" consists of the files "Eve2_81x.c" and "eve.h".
+//Supported Platforms such as but not limited to:
+// Arduino (AVR, SAM, etc.)
+// STM32 (Multiple series support)
+// NXP (Kinetis, iMX RT, etc.)
+// Other supported platforms
+//
+// This "library" consists of the files "eve.c" and "eve.h".
 //
 // In persuit of the common goal of simplicity and understandability I find that I am unable to
 // make function prototypes that match Bridgetek example code.  I draw the line between the
