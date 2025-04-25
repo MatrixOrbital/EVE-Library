@@ -6,6 +6,7 @@
 // Arduino (AVR, SAM, etc.)
 // STM32 (Multiple series support)
 // NXP (Kinetis, iMX RT, etc.)
+// Raspberry Pi (RP2040, RP2350, RP2354)
 // Other supported platforms
 //
 // This "library" consists of the files "eve.c" and "eve.h".
