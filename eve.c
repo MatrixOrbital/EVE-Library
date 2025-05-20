@@ -785,6 +785,7 @@ int EVE_Init(int display, int board, int touch)
 // Reset EVE chip via the hardware PDN line
 int Eve_Reset(void)
 {
+  FifoWriteLocation = 0;
   return HAL_Eve_Reset_HW();
 }
 
