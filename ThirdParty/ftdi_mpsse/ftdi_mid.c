@@ -4,7 +4,7 @@
  * \author FTDI
  * \date 20110321
  *
- * Copyright � 2000-2014 Future Technology Devices International Limited
+ * Copyright © 2000-2014 Future Technology Devices International Limited
  *
  *
  * THIS SOFTWARE IS PROVIDED BY FUTURE TECHNOLOGY DEVICES INTERNATIONAL LIMITED ``AS IS'' AND ANY EXPRESS
@@ -19,22 +19,22 @@
  * Project: libMPSSE
  * Module: Middle Layer
  *
- * Rivision History:
- * 0.1  - initial version
- * 0.2  - 20110524 - updated for SPI and cleaned up
- * 0.21 - 20110708 - Added functions FT_ReadGPIO & FT_WriteGPIO
- * 0.3  - 20111103 - Added MPSSE_CMD_ENABLE_DRIVE_ONLY_ZERO
- * 0.41 - 20140903 - fixed compile warnings
+ * Revision History:
+ * 0.1 -  initial version
+ * 0.2 -  20110524 - updated for SPI and cleaned up
+ * 0.21- 20110708 - Added functions FT_ReadGPIO & FT_WriteGPIO
+ * 0.3 -  20111103 - Added MPSSE_CMD_ENABLE_DRIVE_ONLY_ZERO
  */
 
 
 /******************************************************************************/
 /*								Include files					  			  */
 /******************************************************************************/
-/*moved this two header file inclusion to ftdi_mid.h*/
+#define FTDI_EXPORTS
 #include "ftdi_infra.h"		/*Common portable infrastructure(datatypes, libraries, etc)*/
 #include "ftdi_common.h"	/*Common across I2C, SPI, JTAG modules*/
 #include "ftdi_mid.h"		/*Midlayer specific specific*/
+#include "string.h"
 
 
 /******************************************************************************/
@@ -61,7 +61,6 @@
 /*						Public function definitions						  */
 /******************************************************************************/
 
-
 /*!
  * \brief Returns the number of MPSSE channels a available
  *
@@ -82,46 +81,43 @@
  * so a call to this function will return 2 if a FT4232 is connected to it.
  * \warning
  */
-FT_STATUS FT_GetNumChannels(FT_LegacyProtocol Protocol, uint32 *numChans)
+FT_STATUS FT_GetNumChannels(FT_LegacyProtocol Protocol, DWORD *numChans)
 {
 	DWORD tempNumChannels;
 	FT_DEVICE_LIST_INFO_NODE *pDeviceList;
 	FT_DEVICE_LIST_INFO_NODE deviceList;
 
 	FT_STATUS status;
-	uint32 devLoop = MID_NO_CHANNEL_FOUND;
-	//bool ret;
+	DWORD devLoop = MID_NO_CHANNEL_FOUND;
 
 	FN_ENTER;
 	/*initalize *numChansto 0 */
 	*numChans = MID_NO_CHANNEL_FOUND;
-	/*Get the number of devices connected to the system(FT_CreateDeviceInfoList)*/
+
+	/*Get the number of devices connected to the system with 
+	  FT_CreateDeviceInfoList */
 	status = varFunctionPtrLst.p_FT_GetNumChannel(&tempNumChannels);
-//	printf("\n status=0x%x     tempNumChannels=%d\n",status,tempNumChannels);
 	/*Check if the status is Ok */
-	if(status == FT_OK)
+	if (status == FT_OK)
 	{
 
 		/*Check if No of channel is greater than 0*/
-		if(tempNumChannels > MID_NO_CHANNEL_FOUND)
+		if (tempNumChannels > MID_NO_CHANNEL_FOUND)
 		{
 			/*Allocate space for getting the information about the device (based on
 			number of devices)*/
-			pDeviceList = INFRA_MALLOC(sizeof(FT_DEVICE_LIST_INFO_NODE)\
-				*tempNumChannels);
-			if(NULL == pDeviceList)
+			pDeviceList = INFRA_MALLOC(sizeof(FT_DEVICE_LIST_INFO_NODE) * tempNumChannels);
+			if (NULL == pDeviceList)
 			{
 				return FT_INSUFFICIENT_RESOURCES;
 			}
 			/*get the devices information(FT_GetDeviceInfoList)*/
-			status = varFunctionPtrLst.p_FT_GetDeviceInfoList(pDeviceList,\
-				&tempNumChannels);
+			status = varFunctionPtrLst.p_FT_GetDeviceInfoList(pDeviceList, &tempNumChannels);
 			while(devLoop < tempNumChannels)
 			{
 				deviceList = pDeviceList[devLoop];
 				/*check if device is I2C*/
-				//ret = midCheckI2C(deviceList);
-				if(Mid_CheckMPSSEAvailable(deviceList))
+				if (Mid_CheckMPSSEAvailable(deviceList))
 				{
 					/*increment *numChans*/
 					*numChans = *numChans + 1;
@@ -133,84 +129,65 @@ FT_STATUS FT_GetNumChannels(FT_LegacyProtocol Protocol, uint32 *numChans)
 		else
 		{
 			*numChans = tempNumChannels;
-			//resource Not found		MID_T0DO
         }
 	}
 	else
 	{
 		*numChans = tempNumChannels;
 	}
+	
 	/*return status*/
 	FN_EXIT;
 	return status;
-
 }
 
-
-/*!
- * \brief Provides information about channel
- *
- * This function takes a channel index (valid values are from 1 to the value returned by
- * I2C_GetNumChannels) and provides information about the channel in the form of a populated
- * ChannelInfo structure.
- *
- * \param[in] Protocol Specifies the protocol type(I2C/SPI/JTAG)
- * \param[in] index Index of the channel
- * \param[out] chanInfo Pointer to device information structure
- * \return status
- * \sa
- * \note memory should be allocated and freed by caller
- * \warning
- */
-FT_STATUS FT_GetChannelInfo(FT_LegacyProtocol Protocol, uint32 index,
+FT_STATUS FT_GetChannelInfo(FT_LegacyProtocol Protocol, DWORD index,
 			FT_DEVICE_LIST_INFO_NODE *chanInfo)
 {
-	DWORD tempNumChannels;
-	uint32 channelCount;
+	DWORD tempNumChannels, channelCount;
 	FT_DEVICE_LIST_INFO_NODE *pDeviceList;
 	FT_DEVICE_LIST_INFO_NODE deviceList;
 
 	FT_STATUS status;
-	uint32 devLoop = MID_NO_CHANNEL_FOUND;
+	DWORD devLoop = MID_NO_CHANNEL_FOUND;
 
 	FN_ENTER;
 
 	/*initalize *numChansto 0 */
 	channelCount = MID_NO_CHANNEL_FOUND;
 
-	/*Get the number of devices connected to the system(FT_CreateDeviceInfoList)*/
+	/*Get the number of devices connected to the system with
+	  FT_CreateDeviceInfoList */
 	status = varFunctionPtrLst.p_FT_GetNumChannel(&tempNumChannels);
 	CHECK_STATUS(status);
 
 	/*Check if No of channel is greater than 0*/
-	if(tempNumChannels >= index)
+	if (tempNumChannels >= index)
 	{
 		/*Allocate space for getting the information about the device (based on
 		number of devices)*/
-		pDeviceList = INFRA_MALLOC(sizeof(FT_DEVICE_LIST_INFO_NODE)\
-			*tempNumChannels);
-		if(NULL == pDeviceList)
+		pDeviceList = INFRA_MALLOC(sizeof(FT_DEVICE_LIST_INFO_NODE) * tempNumChannels);
+		if (NULL == pDeviceList)
 		{
 			return FT_INSUFFICIENT_RESOURCES;
 		}
 
-		/*get the devices information(FT_GetDeviceInfoList)*/
-		status = varFunctionPtrLst.p_FT_GetDeviceInfoList(pDeviceList,\
-			&tempNumChannels);
+		/*get the devices information with FT_GetDeviceInfoList */
+		status = varFunctionPtrLst.p_FT_GetDeviceInfoList(pDeviceList, &tempNumChannels);
 		CHECK_STATUS(status);
 
 		while(devLoop < tempNumChannels)
 		{
 			deviceList = pDeviceList[devLoop];
-			if(Mid_CheckMPSSEAvailable(deviceList))
+			if (Mid_CheckMPSSEAvailable(deviceList))
 			{
 				/*increment *numChans*/
 				channelCount++;
 			}
 			/*check if the index matches the I2C channel count*/
-			if(channelCount == index)
+			if (channelCount == index)
 			{
-				INFRA_MEMCPY(chanInfo,&deviceList,sizeof(FT_DEVICE_LIST_INFO_NODE));
+				INFRA_MEMCPY(chanInfo,&deviceList, sizeof(FT_DEVICE_LIST_INFO_NODE));
 				break;
 			}
 			devLoop++;
@@ -222,9 +199,9 @@ FT_STATUS FT_GetChannelInfo(FT_LegacyProtocol Protocol, uint32 index,
 		/* The index of the device is greater than the max number of devices available */
 		return FT_INVALID_HANDLE;
 	}
-	FN_EXIT;
 
 	/*return status*/
+	FN_EXIT;
 	return status;
 }
 
@@ -242,40 +219,38 @@ FT_STATUS FT_GetChannelInfo(FT_LegacyProtocol Protocol, uint32 index,
  * \note Trying to open an already open channel will return an error code
  * \warning
  */
-FT_STATUS FT_OpenChannel(FT_LegacyProtocol Protocol, uint32 index,
+FT_STATUS FT_OpenChannel(FT_LegacyProtocol Protocol, DWORD index,
 			FT_HANDLE *handle)
 {
 	/* Opens a channel and returns the pointer to its handle */
-	DWORD tempNumChannels;
-	uint32 channelCount;
+	DWORD tempNumChannels, channelCount;
 	FT_DEVICE_LIST_INFO_NODE *pDeviceList;
 	FT_DEVICE_LIST_INFO_NODE deviceList;
 
 	FT_STATUS status;
-	uint32 devLoop = MID_NO_CHANNEL_FOUND;
+	DWORD devLoop = MID_NO_CHANNEL_FOUND;
 	FN_ENTER;
 
 	/*initalize *numChansto 0 */
 	channelCount = MID_NO_CHANNEL_FOUND;
 
-	/*Get the number of devices connected to the system(FT_CreateDeviceInfoList)*/
+	/*Get the number of devices connected to the system with
+	  FT_CreateDeviceInfoList */
 	status = varFunctionPtrLst.p_FT_GetNumChannel(&tempNumChannels);
 	CHECK_STATUS(status);
 
 	/*Check if No of channel is greater than 0*/
-	if(tempNumChannels >= index)
+	if (tempNumChannels >= index)
 	{
 		/*Allocate space for getting the information about the device (based on
 		number of devices)*/
-		pDeviceList = INFRA_MALLOC(sizeof(FT_DEVICE_LIST_INFO_NODE)\
-			*tempNumChannels);
-		if(NULL == pDeviceList)
+		pDeviceList = INFRA_MALLOC(sizeof(FT_DEVICE_LIST_INFO_NODE) * tempNumChannels);
+		if (NULL == pDeviceList)
 		{
 			return FT_INSUFFICIENT_RESOURCES;
 		}
 		/*get the devices information(FT_GetDeviceInfoList)*/
-		status = varFunctionPtrLst.p_FT_GetDeviceInfoList(pDeviceList,\
-			&tempNumChannels);
+		status = varFunctionPtrLst.p_FT_GetDeviceInfoList(pDeviceList, &tempNumChannels);
 		CHECK_STATUS(status);
 
 		/*loop until No of devices */
@@ -283,18 +258,18 @@ FT_STATUS FT_OpenChannel(FT_LegacyProtocol Protocol, uint32 index,
 		{
 			deviceList = pDeviceList[devLoop];
 			/*check if device is I2C*/
-			if(Mid_CheckMPSSEAvailable(deviceList))
+			if (Mid_CheckMPSSEAvailable(deviceList))
 			{
 				/*increment *numChans*/
 				channelCount++;
 			}
 			/*check if the index matches the I2C channel count*/
-			if(channelCount == index)
+			if (channelCount == index)
 			{
 				/*call FT_Open*/
-				status = varFunctionPtrLst.p_FT_Open(devLoop,handle);
-				break;
-			}
+				status = varFunctionPtrLst.p_FT_Open(devLoop, handle);
+                break;
+            }
 			devLoop++;
 		}
 		INFRA_FREE(pDeviceList);
@@ -304,11 +279,11 @@ FT_STATUS FT_OpenChannel(FT_LegacyProtocol Protocol, uint32 index,
 		/* The index of the device is greater than the max number of devices available */
 		return FT_INVALID_HANDLE;
 	}
-	FN_EXIT;
+
 	/*return status*/
+	FN_EXIT;
 	return status;
 }
-
 
 /*!
  * \brief Initializes a channel
@@ -332,26 +307,25 @@ FT_STATUS FT_OpenChannel(FT_LegacyProtocol Protocol, uint32 index,
  * \note
  * \warning
  */
-FT_STATUS FT_InitChannel(FT_LegacyProtocol Protocol, FT_HANDLE handle,...)
+FT_STATUS FT_InitChannel(
+	FT_LegacyProtocol Protocol, 
+	FT_HANDLE handle,
+	uint32 clockRate, 
+	uint32 latencyTimer, 
+	uint32 configOptions,
+	DWORD Pin)
 {
-	va_list argumentList;
-	uint32	clockRate,latencyTimer,configOptions;
 	FT_STATUS status;
 	FT_DEVICE ftDevice;
 
 	FN_ENTER;
 
-	/*initialise the argument list*/
-	va_start(argumentList,handle);
-	/*Get the value for Clockrate*/
-	clockRate = va_arg(argumentList,uint32);
-	/*latencyTimer*/
-	latencyTimer = va_arg(argumentList,uint32);
-	/* The options parameter passed in I2C_Init, SPI_Init */
-	configOptions = va_arg(argumentList,uint32);
+
 	/*Check parameters*/
-	if((clockRate<MIN_CLOCK_RATE)||(clockRate>MAX_CLOCK_RATE)||(latencyTimer<
-		MIN_LATENCY_TIMER)||(latencyTimer>MAX_LATENCY_TIMER))
+	if ((clockRate < MIN_CLOCK_RATE) 
+		|| (clockRate > MAX_CLOCK_RATE) 
+		|| (latencyTimer < MIN_LATENCY_TIMER) 
+		|| (latencyTimer > MAX_LATENCY_TIMER))
 				return FT_INVALID_PARAMETER;
 
 	/*Get the device type*/
@@ -364,35 +338,31 @@ FT_STATUS FT_InitChannel(FT_LegacyProtocol Protocol, FT_HANDLE handle,...)
 	status = Mid_PurgeDevice(handle);
 	CHECK_STATUS(status);
 	/*set USB buffer size*/
-	status = Mid_SetUSBParameters(handle,\
-		USB_INPUT_BUFFER_SIZE,USB_OUTPUT_BUFFER_SIZE);
+	status = Mid_SetUSBParameters(handle,
+		USB_INPUT_BUFFER_SIZE, USB_OUTPUT_BUFFER_SIZE);
 	CHECK_STATUS(status);
 	/*sets the special characters for the device,
 	disable event and error characters*/
-	status = Mid_SetDeviceSpecialChar(handle,FALSE,DISABLE_EVENT,FALSE,\
-		DISABLE_CHAR);
+	status = Mid_SetDeviceSpecialChar(handle, FALSE, DISABLE_EVENT, FALSE, DISABLE_CHAR);
 	CHECK_STATUS(status);
 	/*SetTimeOut*/
-#ifdef FT800_HACK
-	status = Mid_SetDeviceTimeOut(handle, 0 \
-		/*DEVICE_READ_TIMEOUT_INFINITE*/,DEVICE_WRITE_TIMEOUT);
+	status = Mid_SetDeviceTimeOut(handle, DEVICE_READ_TIMEOUT, DEVICE_WRITE_TIMEOUT);
 	CHECK_STATUS(status);
-#else
-	status = Mid_SetDeviceTimeOut(handle, 5000 \
-		/*DEVICE_READ_TIMEOUT_INFINITE*/,DEVICE_WRITE_TIMEOUT);
-	CHECK_STATUS(status);
-#endif
 	/*SetLatencyTimer*/
 	status = Mid_SetLatencyTimer(handle,(UCHAR)latencyTimer);
 	CHECK_STATUS(status);
-	/*ResetMPSSE*/
-	status = Mid_ResetMPSSE(handle);
-	CHECK_STATUS(status);
+
+	if (!(Pin&0xFF))
+	{
+		/*ResetMPSSE*/
+		status = Mid_ResetMPSSE(handle);
+		CHECK_STATUS(status);
+	}
 	/*EnableMPSSEInterface*/
 	status = Mid_EnableMPSSEIn(handle);
 	CHECK_STATUS(status);
 	/*20110608 - enabling loopback before sync*/
-	status = Mid_SetDeviceLoopbackState(handle,MID_LOOPBACK_TRUE);
+	status = Mid_SetDeviceLoopbackState(handle, MID_LOOPBACK_TRUE);
 	CHECK_STATUS(status);
 	/*Sync MPSSE */
 	status = Mid_SyncMPSSE(handle);
@@ -405,51 +375,54 @@ FT_STATUS FT_InitChannel(FT_LegacyProtocol Protocol, FT_HANDLE handle,...)
 	DBG(MSG_INFO, "Mid_SetClock Status Ok return 0x%x\n",(unsigned)status);
 	INFRA_SLEEP(20);
 	/*Stop Loop back*/
-	status = Mid_SetDeviceLoopbackState(handle,MID_LOOPBACK_FALSE);
+	status = Mid_SetDeviceLoopbackState(handle, MID_LOOPBACK_FALSE);
 	CHECK_STATUS(status);
-	DBG(MSG_INFO, "Mid_SetDeviceLoopbackState Status Ok return 0x%x\n",\
-		(unsigned)status);
+	DBG(MSG_INFO, "Mid_SetDeviceLoopbackState Status Ok return 0x%x\n", (unsigned)status);
 	status = Mid_EmptyDeviceInputBuff(handle);
 	CHECK_STATUS(status);
-	DBG(MSG_INFO, "Mid_EmptyDeviceInputBuff Status Ok return 0x%x\n",(unsigned)\
-		status);
+	DBG(MSG_INFO, "Mid_EmptyDeviceInputBuff Status Ok return 0x%x\n", (unsigned) status);
 
 	switch(Protocol)
 	{
 		case I2C:
 		{
-			/*Set i/o pin states*/
-			status = Mid_SetGPIOLow(handle,MID_SET_LOW_BYTE_DATA_BITS_DATA,\
-				MID_SET_LOW_BYTE_DATA_BITS_DATA);
-			CHECK_STATUS(status);
-
+			if(configOptions & I2C_ENABLE_PIN_STATE_CONFIG)
+			{
+				/*Set i/o pin states*/
+				status = Mid_SetGPIOLow(handle, 
+				(Pin&0xFF00) >> 8, /* VALUE */
+					Pin & 0xFF);  /* DIRECTION */
+				CHECK_STATUS(status);
+			}
+			else
+			{
+				/*Set i/o pin states*/
+				status = Mid_SetGPIOLow(handle, MID_SET_LOW_BYTE_DATA_BITS_DATA,
+					MID_SET_LOW_BYTE_DATA_BITS_DATA);
+				CHECK_STATUS(status);
+			}
 			/* The I2C master should actually drive the SDA line only when the output is LOW.
 			It should tristate the SDA line when the output should be high. This tristating
 			the SDA line during output HIGH is supported only in FT232H chip*/
-#if 1
-			if((ftDevice == FT_DEVICE_232H) && (configOptions & I2C_ENABLE_DRIVE_ONLY_ZERO))
+			if ((ftDevice == FT_DEVICE_232H) && (configOptions & I2C_ENABLE_DRIVE_ONLY_ZERO))
 			{
 				uint8 buffer[3];//3
-				uint32 noOfBytesToTransfer;
-				uint32 noOfBytesTransferred;
+				DWORD noOfBytesToTransfer;
+				DWORD noOfBytesTransferred;
 				DBG(MSG_DEBUG,"Enabling DRIVE_ONLY_ZERO\n");
 				noOfBytesToTransfer = 3;
 				noOfBytesTransferred = 0;
 				buffer[0] = MPSSE_CMD_ENABLE_DRIVE_ONLY_ZERO;/* MPSSE command */
 				buffer[1] = 0x03; /* LowByte */
 				buffer[2] = 0x00; /* HighByte */
-				status = FT_Channel_Write(I2C,handle,noOfBytesToTransfer,
+				status = FT_Channel_Write(I2C, handle, noOfBytesToTransfer,
 					buffer,&noOfBytesTransferred);
 				CHECK_STATUS(status);
 			}
-#endif
 		}
 		break;
 
 		case SPI:
-		{
-
-		}
 		break;
 
 		case JTAG:
@@ -505,58 +478,27 @@ FT_STATUS FT_CloseChannel(FT_LegacyProtocol Protocol, FT_HANDLE handle)
 
 
 FT_STATUS FT_Channel_Read(FT_LegacyProtocol Protocol, FT_HANDLE handle,
-				uint32 noOfBytes, uint8* buffer, uint32 *noOfBytesTransferred)
+				DWORD noOfBytes, uint8* buffer, LPDWORD noOfBytesTransferred)
 {
 	FT_STATUS status;
 	FN_ENTER;
-	status = varFunctionPtrLst.p_FT_Read(handle, buffer, noOfBytes, \
-		(DWORD*)noOfBytesTransferred);
-#if 0
-/* Disabled after code review */
-	DWORD numOfBytesToRead = 0;
-	DWORD numOfBytesRead = 0;
-	DWORD totalNumOfBytesRead = 0;
-	/*check if no of bytes to send is greater than Max size*/
-	if (noOfBytes > MID_MAX_USB_READ_BYTES)
-	{
-		do
-		{
-			if ((totalNumOfBytesRead + MID_MAX_USB_READ_BYTES) <= noOfBytes)
-			{
-				numOfBytesToRead = MID_MAX_USB_READ_BYTES;
-			}
-			else
-			{
-				numOfBytesToRead = (noOfBytes - totalNumOfBytesRead);
-			}
-			status = varFunctionPtrLst.p_FT_Read(handle,\
-				&buffer[totalNumOfBytesRead],numOfBytesToRead,&numOfBytesRead);
-			totalNumOfBytesRead = totalNumOfBytesRead + numOfBytesRead;
-		}while ((totalNumOfBytesRead < noOfBytes) && (status == FT_OK));
-		/*copy the total number of bytes read */
-		*noOfBytesTransferred = totalNumOfBytesRead;
-	}
-	else
-	{
-		status = varFunctionPtrLst.p_FT_Read(handle, buffer, noOfBytes, \
-			noOfBytesTransferred);
-	}
-#endif
+
+	status = varFunctionPtrLst.p_FT_Read(handle, buffer, noOfBytes, noOfBytesTransferred);
 
 #ifdef INFRA_DEBUG_ENABLE
 	{
-		uint32 i;
-		printf("FT_Channel_Read called with noOfBytes=%u\n",(unsigned)noOfBytes);
-		for(i=0;i<noOfBytes;i++)
+		DWORD i;
+		printf("FT_Channel_Read called with noOfBytes=%u\n", (unsigned)noOfBytes);
+		for (i = 0; i < noOfBytes; i++)
 		{
-			printf(" 0x%x",buffer[i]);
+			printf(" 0x%x", buffer[i]);
 		}
 		printf("\n");
 	}
 #endif
 
 	FN_EXIT;
-	return status;
+    return status;
 
 
 }
@@ -577,58 +519,27 @@ FT_STATUS FT_Channel_Read(FT_LegacyProtocol Protocol, FT_HANDLE handle,
  * \warning
  */
 FT_STATUS FT_Channel_Write(FT_LegacyProtocol Protocol, FT_HANDLE handle,
-			uint32 noOfBytes, uint8* buffer, uint32 *noOfBytesTransferred)
+			DWORD noOfBytes, uint8* buffer, LPDWORD noOfBytesTransferred)
 {
 	FT_STATUS status;
 	FN_ENTER;
 
 #ifdef INFRA_DEBUG_ENABLE
 	{
-		uint32 i;
+		DWORD i;
 		printf("FT_Channel_Write called with noOfBytes=%u\n",(unsigned)noOfBytes);
-		for(i=0;i<noOfBytes;i++)
+		for (i = 0; i < noOfBytes; i++)
 		{
-			printf(" 0x%x",buffer[i]);
+			printf(" 0x%x", buffer[i]);
 		}
 		printf("\n");
 	}
 #endif
 
-	status = varFunctionPtrLst.p_FT_Write(handle, buffer, noOfBytes, \
-		(DWORD*)noOfBytesTransferred);
-#if 0
-/* Disabled after code review */
-	DWORD numOfBytesToSend = 0;
-	DWORD numOfBytesSent = 0;
-	DWORD totalNumOfBytesSent = 0;
-	/*check if no of bytes to send is greater than Max size*/
-	if (noOfBytes > MID_MAX_USB_WRITE_BYTES)
-	{
-		do
-		{
-			if ((totalNumOfBytesSent + MID_MAX_USB_WRITE_BYTES) <= noOfBytes)
-			{
-				numOfBytesToSend = MID_MAX_USB_WRITE_BYTES;
-			}
-			else
-			{
-				numOfBytesToSend = (noOfBytes - totalNumOfBytesSent);
-			}
-			status = varFunctionPtrLst.p_FT_Write(handle,\
-				&buffer[totalNumOfBytesSent],numOfBytesToSend,&numOfBytesSent);
-			totalNumOfBytesSent = totalNumOfBytesSent + numOfBytesSent;
-		}while ((totalNumOfBytesSent < noOfBytes) && (status == FT_OK));
-		/*copy the total number of bytes transfered */
-		*noOfBytesTransferred = totalNumOfBytesSent;
-	}
-	else
-	{
-		status = varFunctionPtrLst.p_FT_Write(handle, buffer, noOfBytes, \
-			noOfBytesTransferred);
-	}
-#endif
+	status = varFunctionPtrLst.p_FT_Write(handle, buffer, noOfBytes, noOfBytesTransferred);
+
 	FN_EXIT;
-	return status;
+  	return status;
 }
 
 
@@ -639,44 +550,52 @@ FT_STATUS FT_Channel_Write(FT_LegacyProtocol Protocol, FT_HANDLE handle,
 *\Param[in] FT_DEVICE_LIST_INFO_NODE device info node wich contains the information about the device
 *\return bool return a boolean value
 */
-
-
 bool Mid_CheckMPSSEAvailable(FT_DEVICE_LIST_INFO_NODE devList)
 {
-	//FT_STATUS status=FT_OK;
+	FT_STATUS status = FT_OK;
+	(void)status;
 	bool isMPSSEAvailable = MID_NO_MPSSE;
 	FN_ENTER;
+
+	size_t  los = strlen(devList.Description);
+
 	/*check TYPE field*/
-	//printf("\n\tdevList.Type=0x%x\n",devList.Type);
-	//printf("\tdevList.LocId=0x%x\n",devList.LocId);
 	switch(devList.Type)
 	{
-		case FT_DEVICE_2232C:
-			if((devList.LocId & 0xf)==1)
+		case FT_DEVICE_2232C:	
+			if (devList.Description[los-1] == 0x41)   //Last character = 0x41 = ASCII "A"
 			{
-				isMPSSEAvailable =  MID_MPSSE_AVAILABLE;
+				isMPSSEAvailable =	MID_MPSSE_AVAILABLE;
 			}
 			break;
 		case FT_DEVICE_2232H:
-			if(((devList.LocId & 0xf)==1)|| ((devList.LocId & 0xf)==2))
+		case FT_DEVICE_2233HP:
+		case FT_DEVICE_2232HP:
+		case FT_DEVICE_2232HA:
+			if ((devList.Description[los - 1] == 0x41) || (devList.Description[los - 1] == 0x42))  //Last character = 0x41 = ASCII "A", 0x42 = ASCII "B"
 			{
-				isMPSSEAvailable =  MID_MPSSE_AVAILABLE;
+				isMPSSEAvailable =	MID_MPSSE_AVAILABLE;
 			}
 			break;
 		case FT_DEVICE_4232H:
-			if(((devList.LocId & 0xf)==1)|| ((devList.LocId & 0xf)==2))
+		case FT_DEVICE_4233HP:
+		case FT_DEVICE_4232HP:
+		case FT_DEVICE_4232HA:
+			if ((devList.Description[los - 1] == 0x41) || (devList.Description[los - 1] == 0x42))  //Last character = 0x41 = ASCII "A", 0x42 = ASCII "B"
 			{
-				isMPSSEAvailable =  MID_MPSSE_AVAILABLE;
+				isMPSSEAvailable =	MID_MPSSE_AVAILABLE;
 			}
 			break;
 		case FT_DEVICE_232H:
-				isMPSSEAvailable =  MID_MPSSE_AVAILABLE;
+		case FT_DEVICE_232HP:
+		case FT_DEVICE_233HP:
+				isMPSSEAvailable =	MID_MPSSE_AVAILABLE;
 			break;
 		default:
 			break;
 	};
-	FN_EXIT;
 
+	FN_EXIT;
 	return isMPSSEAvailable;
 }
 
@@ -734,13 +653,14 @@ FT_STATUS Mid_PurgeDevice (FT_HANDLE handle)
  * \note
  * \warning
  */
-FT_STATUS Mid_SetUSBParameters(FT_HANDLE handle,DWORD inputBufSize,DWORD \
-	outputBufSize)
+FT_STATUS Mid_SetUSBParameters(FT_HANDLE handle, DWORD inputBufSize, DWORD outputBufSize)
 {
 	FT_STATUS status;
+	
 	FN_ENTER;
-	status = varFunctionPtrLst.p_FT_SetUSBParameters(handle,inputBufSize,\
-		outputBufSize);
+	
+	status = varFunctionPtrLst.p_FT_SetUSBParameters(handle, inputBufSize, outputBufSize);
+	
 	FN_EXIT;
 	return status;
 }
@@ -759,13 +679,15 @@ FT_STATUS Mid_SetUSBParameters(FT_HANDLE handle,DWORD inputBufSize,DWORD \
  * \note
  * \warning
  */
-FT_STATUS Mid_SetDeviceSpecialChar(FT_HANDLE handle,UCHAR eventCh,
+FT_STATUS Mid_SetDeviceSpecialChar(FT_HANDLE handle, UCHAR eventCh,
 						UCHAR eventStatus, UCHAR errorCh, UCHAR errorStatus)
 {
 	FT_STATUS status;
+	
 	FN_ENTER;
-	status = varFunctionPtrLst.p_FT_SetChars(handle,eventCh,eventStatus,\
-		errorCh,errorStatus);
+	
+	status = varFunctionPtrLst.p_FT_SetChars(handle, eventCh, eventStatus, errorCh, errorStatus);
+	
 	FN_EXIT;
 	return status;
 }
@@ -784,12 +706,14 @@ FT_STATUS Mid_SetDeviceSpecialChar(FT_HANDLE handle,UCHAR eventCh,
  * \note
  * \warning
  */
-FT_STATUS Mid_SetDeviceTimeOut(FT_HANDLE handle,DWORD rdTimeOut,\
-	DWORD wrTimeOut)
+FT_STATUS Mid_SetDeviceTimeOut(FT_HANDLE handle, DWORD rdTimeOut, DWORD wrTimeOut)
 {
 	FT_STATUS status;
+	
 	FN_ENTER;
-	status = varFunctionPtrLst.p_FT_SetTimeouts(handle,rdTimeOut,wrTimeOut);
+	
+	status = varFunctionPtrLst.p_FT_SetTimeouts(handle, rdTimeOut, wrTimeOut);
+	
 	FN_EXIT;
 	return status;
 }
@@ -809,8 +733,11 @@ FT_STATUS Mid_SetDeviceTimeOut(FT_HANDLE handle,DWORD rdTimeOut,\
 FT_STATUS Mid_SetLatencyTimer (FT_HANDLE handle, UCHAR milliSecond)
 {
 	FT_STATUS status;
+	
 	FN_ENTER;
-	status = varFunctionPtrLst.p_FT_SetLatencyTimer(handle,milliSecond);
+	
+	status = varFunctionPtrLst.p_FT_SetLatencyTimer(handle, milliSecond);
+	
 	FN_EXIT;
 	return status;
  }
@@ -828,9 +755,11 @@ FT_STATUS Mid_SetLatencyTimer (FT_HANDLE handle, UCHAR milliSecond)
 FT_STATUS Mid_ResetMPSSE(FT_HANDLE handle)
 {
 	FT_STATUS status;
+	
 	FN_ENTER;
-	status = varFunctionPtrLst.p_FT_SetBitmode(handle, INTERFACE_MASK_IN,\
-		RESET_INTERFACE);
+	
+	status = varFunctionPtrLst.p_FT_SetBitmode(handle, INTERFACE_MASK_IN, RESET_INTERFACE);
+	
 	FN_EXIT;
 	return status;
 }
@@ -848,9 +777,11 @@ FT_STATUS Mid_ResetMPSSE(FT_HANDLE handle)
 FT_STATUS Mid_EnableMPSSEIn(FT_HANDLE handle)
 {
 	FT_STATUS status;
+	
 	FN_ENTER;
-	status = varFunctionPtrLst.p_FT_SetBitmode(handle,INTERFACE_MASK_IN,\
-		ENABLE_MPSSE);
+	
+	status = varFunctionPtrLst.p_FT_SetBitmode(handle, INTERFACE_MASK_IN, ENABLE_MPSSE);
+		
 	FN_EXIT;
 	return status;
 }
@@ -873,18 +804,16 @@ FT_STATUS Mid_SyncMPSSE(FT_HANDLE handle)
 	UCHAR cmdEchoed;
 
 	FN_ENTER;
+	
 	status = Mid_EmptyDeviceInputBuff(handle);
 	CHECK_STATUS(status);
 	/*send and receive command*/
-	status = Mid_SendReceiveCmdFromMPSSE(handle,MID_ECHO_COMMAND_CONTINUOUSLY,\
-		MID_ECHO_CMD_1,&cmdEchoed);
+	status = Mid_SendReceiveCmdFromMPSSE(handle, MID_ECHO_COMMAND_CONTINUOUSLY,	MID_ECHO_CMD_1, &cmdEchoed);
 	CHECK_STATUS(status);
-	/**/
 
-	if(cmdEchoed == MID_CMD_ECHOED)
+	if (cmdEchoed == MID_CMD_ECHOED)
 	{
-		status = Mid_SendReceiveCmdFromMPSSE(handle,MID_ECHO_COMMAND_ONCE,\
-			MID_ECHO_CMD_2,&cmdEchoed);
+        status = Mid_SendReceiveCmdFromMPSSE(handle, MID_ECHO_COMMAND_ONCE,	MID_ECHO_CMD_2, &cmdEchoed);
 		CHECK_STATUS(status);
 		if (cmdEchoed != MID_CMD_ECHOED)
 		{
@@ -894,7 +823,8 @@ FT_STATUS Mid_SyncMPSSE(FT_HANDLE handle)
 	else
 	{
 		status = FT_OTHER_ERROR;
-	}
+    }
+	
 	FN_EXIT;
 	return status;
 }
@@ -917,7 +847,7 @@ FT_STATUS Mid_SyncMPSSE(FT_HANDLE handle)
 
 
 
-FT_STATUS Mid_SendReceiveCmdFromMPSSE(FT_HANDLE handle, UCHAR echoCmdFlag,UCHAR ecoCmd,UCHAR *cmdEchoed)
+FT_STATUS Mid_SendReceiveCmdFromMPSSE(FT_HANDLE handle, UCHAR echoCmdFlag, UCHAR ecoCmd, UCHAR *cmdEchoed)
 {
 	FT_STATUS status;
 	DWORD bytesInInputBuf = 0;
@@ -926,11 +856,12 @@ FT_STATUS Mid_SendReceiveCmdFromMPSSE(FT_HANDLE handle, UCHAR echoCmdFlag,UCHAR 
 	DWORD byteCounter;
 	UCHAR cmdResponse = MID_CMD_NOT_ECHOED;
 	int loopCounter = 0;
-	UCHAR *readBuffer=NULL;
+	UCHAR *readBuffer = NULL;
 
 	FN_ENTER;
+	
 	readBuffer = (UCHAR*)INFRA_MALLOC(MID_MAX_IN_BUF_SIZE);
-	if(NULL == readBuffer)
+	if (NULL == readBuffer)
 	{
 		return FT_INSUFFICIENT_RESOURCES;
 	}
@@ -939,52 +870,51 @@ FT_STATUS Mid_SendReceiveCmdFromMPSSE(FT_HANDLE handle, UCHAR echoCmdFlag,UCHAR 
 	/* check whether command has to be sent only once*/
 	if (echoCmdFlag == MID_ECHO_COMMAND_ONCE)
 	{
-		status = varFunctionPtrLst.p_FT_Write(handle,&ecoCmd,1,&bytesWritten);
+		status = varFunctionPtrLst.p_FT_Write(handle,&ecoCmd, 1,&bytesWritten);
 		CHECK_STATUS(status);
 	}
 
 	do
 	{
-		DBG(MSG_DEBUG,"In Loop Mid_SendReceiveCmdFromMPSSE loopCounter = %d \n"\
-			,loopCounter);
+		DBG(MSG_DEBUG,"In Loop Mid_SendReceiveCmdFromMPSSE loopCounter = %d \n", loopCounter);
 		/*check whether command has to be sent every time in the loop*/
-		if(echoCmdFlag == MID_ECHO_COMMAND_CONTINUOUSLY)
+		if (echoCmdFlag == MID_ECHO_COMMAND_CONTINUOUSLY)
 		{
-		  status = varFunctionPtrLst.p_FT_Write(handle,&ecoCmd,1,&bytesWritten);
+		  status = varFunctionPtrLst.p_FT_Write(handle,&ecoCmd, 1,&bytesWritten);
 		 CHECK_STATUS(status);
 		}
 		/*read the no of bytes available in Receive buffer*/
 		status = varFunctionPtrLst.p_FT_GetQueueStatus(handle,&bytesInInputBuf);
 		CHECK_STATUS(status);
 		INFRA_SLEEP(1);
-		DBG(MSG_DEBUG,"bytesInInputBuf size =  %d\n",bytesInInputBuf);
-		if(bytesInInputBuf >0)
+		DBG(MSG_DEBUG,"bytesInInputBuf size =  %d\n", bytesInInputBuf);
+		if (bytesInInputBuf >0)
 		{
 			MID_CHK_IN_BUF_OK(bytesInInputBuf);
-			status = varFunctionPtrLst.p_FT_Read(handle,readBuffer,bytesInInputBuf,&numOfBytesRead);
+			status = varFunctionPtrLst.p_FT_Read(handle, readBuffer, bytesInInputBuf,&numOfBytesRead);
 			CHECK_STATUS(status);
-			if(numOfBytesRead >0)
+			if (numOfBytesRead >0)
 			{
 				byteCounter = 0;
 				do
 				{
-					if(byteCounter <= (numOfBytesRead-1))
-					{
-						if(readBuffer[byteCounter]==MID_BAD_COMMAND_RESPONSE)
-						{
+					if (byteCounter <= (numOfBytesRead-1))
+                    {
+						if (readBuffer[byteCounter]==MID_BAD_COMMAND_RESPONSE)
+                        {
 							cmdResponse = MID_BAD_COMMAND_RESPONSE;
 						}
 						else
 						{
-							if(cmdResponse == MID_BAD_COMMAND_RESPONSE)
+							if (cmdResponse == MID_BAD_COMMAND_RESPONSE)
 							{
-								if(readBuffer[byteCounter]==ecoCmd)
+								if (readBuffer[byteCounter]==ecoCmd)
 								{
-									*cmdEchoed = MID_CMD_ECHOED;
-								}
+                                    *cmdEchoed = MID_CMD_ECHOED;
+                                }
 							}
 							cmdResponse = MID_CMD_NOT_ECHOED;
-						}
+                        }
 					}
 					byteCounter++;
 				}while((byteCounter < bytesInInputBuf)&&(*cmdEchoed == MID_CMD_NOT_ECHOED));
@@ -993,19 +923,20 @@ FT_STATUS Mid_SendReceiveCmdFromMPSSE(FT_HANDLE handle, UCHAR echoCmdFlag,UCHAR 
 
 		/*for breaking the loop */
 		loopCounter++;
-		if(loopCounter > MID_MAX_IN_BUF_SIZE)
+		if (loopCounter > MID_MAX_IN_BUF_SIZE)
 		{
 			DBG(MSG_DEBUG,"Loop breaked after executing %u times\n",(unsigned)MID_MAX_IN_BUF_SIZE);
 			status = FT_OTHER_ERROR;
 			break;
 		}
 	}while((*cmdEchoed == MID_CMD_NOT_ECHOED) && (status == FT_OK));
-	if(NULL != readBuffer)
+	if (NULL != readBuffer)
 	{
-		INFRA_FREE(readBuffer);//Bug12
+		INFRA_FREE(readBuffer);
 	}
+	
 	FN_EXIT;
-	return status;
+    return status;
 }
 
 
@@ -1021,7 +952,8 @@ FT_STATUS Mid_SendReceiveCmdFromMPSSE(FT_HANDLE handle, UCHAR echoCmdFlag,UCHAR 
  */
 FT_STATUS Mid_SetGPIOLow(FT_HANDLE handle, uint8 value, uint8 direction)
 {
-	//FT_STATUS status=FT_OK;
+	FT_STATUS status = FT_OK;
+	(void)status;
 	UCHAR inputBuffer[10];
 	DWORD bytesWritten = 0;
 	DWORD bufIdx = 0;
@@ -1032,14 +964,9 @@ FT_STATUS Mid_SetGPIOLow(FT_HANDLE handle, uint8 value, uint8 direction)
 	inputBuffer[bufIdx++] = value;//0x13;
 	inputBuffer[bufIdx++] = direction;//0x13;
 
-	/* Don't fiddle with the higher byte. It is supposed to be accessed by FT_WriteGPIO
-	inputBuffer[bufIdx++] = MID_SET_HIGH_BYTE_DATA_BITS_CMD;
-	inputBuffer[bufIdx++] = MID_SET_HIGH_BYTE_DATA_BITS_DATA;
-	inputBuffer[bufIdx++] = MID_SET_HIGH_BYTE_DATA_BITS_DATA;
-	*/
 	FN_EXIT;
 
-	return varFunctionPtrLst.p_FT_Write(handle,inputBuffer,bufIdx,&bytesWritten);
+	return varFunctionPtrLst.p_FT_Write(handle, inputBuffer, bufIdx,&bytesWritten);
 
 }
 
@@ -1047,9 +974,9 @@ FT_STATUS Mid_GetFtDeviceType(FT_HANDLE handle, FT_DEVICE *ftDevice)
 {
 	FT_STATUS status = FT_OTHER_ERROR;
 	DWORD deviceID;
-	CHAR pSerialNumber[300];
-	CHAR pDescription[300];
-	VOID *Dummy=NULL;
+	CHAR pSerialNumber[32]; // Maximum size 16
+	CHAR pDescription[128]; // Maximum size 64
+	VOID *Dummy = NULL;
 
 	FN_ENTER;
 	status = varFunctionPtrLst.p_FT_GetDeviceInfo(handle, ftDevice, &deviceID, \
@@ -1107,8 +1034,9 @@ FT_STATUS Mid_GetFtDeviceType(FT_HANDLE handle, FT_DEVICE *ftDevice)
  * \warning
  */
 FT_STATUS Mid_SetClock(FT_HANDLE handle, FT_DEVICE ftDevice, uint32 clock)
+
 {
-	UCHAR inputBuffer[10];
+    UCHAR inputBuffer[10];
 	DWORD bytesWritten = 0;
 	DWORD bufIdx = 0;
 	uint8 valueH, valueL;
@@ -1120,7 +1048,7 @@ FT_STATUS Mid_SetClock(FT_HANDLE handle, FT_DEVICE ftDevice, uint32 clock)
 	{
 		case FT_DEVICE_2232C:/* This is actually FT2232D but defined is FT_DEVICE_2232C
 			in D2XX. Also, it is the only FS device that supports MPSSE */
-			value = (MID_30MHZ/clock) - 1;
+			value = (MID_6MHZ/clock) - 1;
 			break;
 
 		default:/* Assuming all new chips will he HS MPSSE devices */
@@ -1155,12 +1083,13 @@ FT_STATUS Mid_SetClock(FT_HANDLE handle, FT_DEVICE ftDevice, uint32 clock)
 	valueL = (uint8)value;
 	valueH = (uint8)(value>>8);
 	/*set the clock*/
-	inputBuffer[bufIdx++] = MID_SET_CLOCK_FREQUENCY_CMD;
-	DBG(MSG_DEBUG,"valueL=0x%x valueH=0x%x \n",valueL,valueH);
+    inputBuffer[bufIdx++] = MID_SET_CLOCK_FREQUENCY_CMD;
+	DBG(MSG_DEBUG,"valueL = 0x%x valueH = 0x%x \n", valueL, valueH);
 	inputBuffer[bufIdx++] = valueL;
 	inputBuffer[bufIdx++] = valueH;
+	
 	FN_EXIT;
-	return varFunctionPtrLst.p_FT_Write(handle,inputBuffer,bufIdx,&bytesWritten);
+	return varFunctionPtrLst.p_FT_Write(handle, inputBuffer, bufIdx,&bytesWritten);
 }
 
 /*!
@@ -1174,12 +1103,14 @@ FT_STATUS Mid_SetClock(FT_HANDLE handle, FT_DEVICE ftDevice, uint32 clock)
  * \note
  * \warning
  */
-FT_STATUS Mid_SetDeviceLoopbackState(FT_HANDLE handle,uint8 loopBackFlag)
+FT_STATUS Mid_SetDeviceLoopbackState(FT_HANDLE handle, uint8 loopBackFlag)
 {
-	//FT_STATUS status=FT_OK;
-	UCHAR inputBuffer[10];
+	FT_STATUS status = FT_OK;
+	(void)status;
+    UCHAR inputBuffer[10];
 	DWORD bytesWritten = 0;
 	DWORD bufIdx = 0;
+	
 	FN_ENTER;
 
 	if (loopBackFlag == MID_LOOPBACK_FALSE)
@@ -1189,9 +1120,10 @@ FT_STATUS Mid_SetDeviceLoopbackState(FT_HANDLE handle,uint8 loopBackFlag)
 	else
 	{
 		inputBuffer[bufIdx++] = MID_TURN_ON_LOOPBACK_CMD;
-	}
+    }
+	
 	FN_EXIT;
-	return varFunctionPtrLst.p_FT_Write(handle,inputBuffer,bufIdx,&bytesWritten);
+   return varFunctionPtrLst.p_FT_Write(handle, inputBuffer, bufIdx,&bytesWritten);
 }
 
 /*!
@@ -1214,33 +1146,33 @@ FT_STATUS Mid_EmptyDeviceInputBuff(FT_HANDLE handle)
 
 	FN_ENTER;
 	readBuffer = (UCHAR*)INFRA_MALLOC(MID_MAX_IN_BUF_SIZE);
-	if(NULL == readBuffer)
+	if (NULL == readBuffer)
 	{
 		return FT_INSUFFICIENT_RESOURCES;
 	}
 	status = varFunctionPtrLst.p_FT_GetQueueStatus(handle,&bytesInInputBuf);
 	CHECK_STATUS(status);
-	if(bytesInInputBuf > 0)
+	if (bytesInInputBuf > 0)
 	{
 		do
 		{
-			if(bytesInInputBuf >MID_MAX_IN_BUF_SIZE)
+			if (bytesInInputBuf >MID_MAX_IN_BUF_SIZE)
 			{
-				status = varFunctionPtrLst.p_FT_Read(handle,readBuffer,\
+				status = varFunctionPtrLst.p_FT_Read(handle, readBuffer,
 					MID_MAX_IN_BUF_SIZE,&numOfBytesRead);
 				CHECK_STATUS(status);
 				bytesInInputBuf = bytesInInputBuf - numOfBytesRead;
 			}
 			else
 			{
-				status = varFunctionPtrLst.p_FT_Read(handle,readBuffer,\
+				status = varFunctionPtrLst.p_FT_Read(handle, readBuffer,
 					bytesInInputBuf,&numOfBytesRead);
 				CHECK_STATUS(status);
 				bytesInInputBuf = bytesInInputBuf - numOfBytesRead;
 			}
 		}while((status == FT_OK)&&(bytesInInputBuf!=0));
 	}
-	if(NULL != readBuffer)
+	if (NULL != readBuffer)
 	{
 		INFRA_FREE(readBuffer);//Bug12
 	}
@@ -1263,24 +1195,20 @@ FT_STATUS Mid_EmptyDeviceInputBuff(FT_HANDLE handle)
  * \note
  * \warning
  */
-FTDI_API FT_STATUS FT_WriteGPIO(FT_HANDLE handle, uint8 dir, uint8 value)
+FTDIMPSSE_API FT_STATUS FT_WriteGPIO(FT_HANDLE handle, uint8 dir, uint8 value)
 {
 	FT_STATUS status;
 	uint8 buffer[3];
 	DWORD bytesWritten = 0;
-	uint32 bufIdx = 0;
+	DWORD bufIdx = 0;
 
 	FN_ENTER;
-#if 0 //def FT800_232HM
-	buffer[bufIdx++] = MPSSE_CMD_SET_DATA_BITS_HIGHBYTE;
-	buffer[bufIdx++] = value;
-	buffer[bufIdx++] = dir;
-#else
+
 	buffer[bufIdx++] = MPSSE_CMD_SET_DATA_BITS_LOWBYTE;
 	buffer[bufIdx++] = value;
 	buffer[bufIdx++] = dir;
-#endif
-	status = varFunctionPtrLst.p_FT_Write(handle,buffer,bufIdx,&bytesWritten);
+	status = varFunctionPtrLst.p_FT_Write(handle, buffer, bufIdx,&bytesWritten);
+	
 	FN_EXIT;
 	return status;
 }
@@ -1292,13 +1220,13 @@ FTDI_API FT_STATUS FT_WriteGPIO(FT_HANDLE handle, uint8 dir, uint8 value)
  * This function reads the GPIO lines associated with the high byte of the MPSSE channel
  *
  * \param[in] handle Handle of the channel
- * \param[out] *value Input state of the 8 GPIO lines(1=high)
+ * \param[out] *value Input state of the 8 GPIO lines(1 = high)
  * \return status
  * \sa
  * \note The directions of the GPIO pins have to be first set to input mode using FT_WriteGPIO
  * \warning
  */
-FTDI_API FT_STATUS FT_ReadGPIO(FT_HANDLE handle,uint8 *value)
+FTDIMPSSE_API FT_STATUS FT_ReadGPIO(FT_HANDLE handle, uint8 *value)
 {
 	FT_STATUS status;
 	uint8 buffer[2];
@@ -1307,26 +1235,18 @@ FTDI_API FT_STATUS FT_ReadGPIO(FT_HANDLE handle,uint8 *value)
 	UCHAR readBuffer[10];
 
 	FN_ENTER;
-#if 0 //def FT800_232HM
+
 	buffer[bytesToTransfer++] = MPSSE_CMD_GET_DATA_BITS_HIGHBYTE;
 	buffer[bytesToTransfer++] = MPSSE_CMD_SEND_IMMEDIATE;
-#else
-	buffer[bytesToTransfer++] = MPSSE_CMD_GET_DATA_BITS_LOWBYTE;
-	buffer[bytesToTransfer++] = MPSSE_CMD_SEND_IMMEDIATE;
-#endif
-	status = varFunctionPtrLst.p_FT_Write(handle,buffer,bytesToTransfer,\
-		&bytesTransfered);
+	status = varFunctionPtrLst.p_FT_Write(handle, buffer, bytesToTransfer, &bytesTransfered);
 	CHECK_STATUS(status);
-	DBG(MSG_DEBUG,"bytesToTransfer=0x%x bytesTransfered=0x%x\n",\
-		(unsigned)bytesToTransfer,(unsigned)bytesTransfered);
+	DBG(MSG_DEBUG,"bytesToTransfer = 0x%x bytesTransfered = 0x%x\n", (unsigned)bytesToTransfer, (unsigned)bytesTransfered);
 	bytesToTransfer = 1;
 	bytesTransfered = 0;
-	status = varFunctionPtrLst.p_FT_Read(handle,readBuffer,bytesToTransfer,\
-		&bytesTransfered);
+	status = varFunctionPtrLst.p_FT_Read(handle, readBuffer, bytesToTransfer, &bytesTransfered);
 	CHECK_STATUS(status);
-	DBG(MSG_DEBUG,"bytesToTransfer=0x%x bytesTransfered=0x%x\n",\
-		(unsigned)bytesToTransfer,(unsigned)bytesTransfered);
-	if(bytesToTransfer != bytesTransfered)
+	DBG(MSG_DEBUG,"bytesToTransfer = 0x%x bytesTransfered = 0x%x\n", (unsigned)bytesToTransfer, (unsigned)bytesTransfered);
+	if (bytesToTransfer != bytesTransfered)
 		status = FT_IO_ERROR;
 	*value = readBuffer[0];
 
@@ -1334,11 +1254,3 @@ FTDI_API FT_STATUS FT_ReadGPIO(FT_HANDLE handle,uint8 *value)
 	return status;
 }
 
-FT_STATUS Mid_GetQueueStatus(FT_HANDLE handle, LPDWORD lpdwAmountInRxQueue)
-{
-	FT_STATUS status;
-	FN_ENTER;
-	status = varFunctionPtrLst.p_FT_GetQueueStatus(handle, lpdwAmountInRxQueue);
-	FN_EXIT;
-	return status;
-}

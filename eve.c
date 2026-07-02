@@ -170,6 +170,7 @@ void Calibrate_Fixed(uint32_t width_pixels,
                      uint32_t height_pixels,
                      uint32_t touch_x_max,
                      uint32_t touch_y_max);
+void Calibrate_Offset(uint32_t width_pixels, uint32_t height_pixels, uint32_t v_offset);
 
 uint32_t Display_Width()
 {
@@ -403,6 +404,7 @@ void MO_ST7789V_init(void)
 // The Display, board and touch defines can be found in displays.h.
 int EVE_Init(int display, int board, int touch)
 {
+  FifoWriteLocation = 0;
   uint32_t Ready = false;
   int DWIDTH;
   int DHEIGHT;
@@ -448,6 +450,7 @@ int EVE_Init(int display, int board, int touch)
     CSPREAD = 0;
     DITHER = 1;
     break;
+  case DISPLAY_50_800x480_WG:
   case DISPLAY_50_800x480:
     DWIDTH = 800;
     DHEIGHT = 480;
@@ -553,6 +556,27 @@ int EVE_Init(int display, int board, int touch)
     CSPREAD = 1;
     DITHER = 1;
     break;
+  case DISPLAY_38_480x116_IPS:
+    DWIDTH = 480;
+    DHEIGHT = 116;
+    PIXVOFFSET = 12;
+    PIXHOFFSET = 0;
+    HCYCLE = 536;
+    HOFFSET = 55;
+    HSYNC0 = 8;
+    HSYNC1 = 12;
+    VCYCLE = 297;
+    VOFFSET = 24;
+    VSYNC0 = 8;
+    VSYNC1 = 12;
+    PCLK = 6;
+    SWIZZLE = 0;
+    PCLK_POL = 1;
+    HSIZE = 480;
+    VSIZE = 272;
+    CSPREAD = 0;
+    DITHER = 1;
+    break;
   case DISPLAY_35_320x240:
     DWIDTH = 320;
     DHEIGHT = 240;
@@ -576,18 +600,39 @@ int EVE_Init(int display, int board, int touch)
     break;
   case DISPLAY_29_320x102:
     DWIDTH = 320;
-    DHEIGHT = 105;
-    PIXVOFFSET = 135;
+    DHEIGHT = 102;
+    PIXVOFFSET = 0;
     PIXHOFFSET = 0;
-    HCYCLE = 429;
-    HOFFSET = 108;
-    HSYNC0 = 20;
-    HSYNC1 = 40;
-    VCYCLE = 283;
-    VOFFSET = 42;
-    VSYNC0 = 4;
-    VSYNC1 = 24;
-    PCLK = 9; //
+    HCYCLE = 408;
+    HOFFSET = 70;
+    HSYNC0 = 0;
+    HSYNC1 = 10;
+    VCYCLE = 262;
+    VOFFSET = 156;
+    VSYNC0 = 0;
+    VSYNC1 = 2;
+    PCLK = 8; //
+    SWIZZLE = 0;
+    PCLK_POL = 1;
+    HSIZE = 320;
+    VSIZE = 240;
+    CSPREAD = 0;
+    DITHER = 1;
+    break;
+  case DISPLAY_29_320x102_IPS:
+    DWIDTH = 320;
+    DHEIGHT = 102;
+    PIXVOFFSET = 138;
+    PIXHOFFSET = 0;
+    HCYCLE = 376;
+    HOFFSET = 55;
+    HSYNC0 = 8;
+    HSYNC1 = 12;
+    VCYCLE = 265;
+    VOFFSET = 24;
+    VSYNC0 = 8;
+    VSYNC1 = 12;
+    PCLK = 6; //
     SWIZZLE = 0;
     PCLK_POL = 1;
     HSIZE = 320;
@@ -685,14 +730,14 @@ int EVE_Init(int display, int board, int touch)
     DHEIGHT = 128;
     PIXVOFFSET = 68;
     PIXHOFFSET = 0;
-    HCYCLE = 536;
-    HOFFSET = 55;
+    HCYCLE = 532;
+    HOFFSET = 51;
     HSYNC0 = 8;
     HSYNC1 = 12;
-    VCYCLE = 297;
-    VOFFSET = 24;
+    VCYCLE = 296;
+    VOFFSET = 23;
     VSYNC0 = 8;
-    VSYNC1 = 12;
+    VSYNC1 = 11;
     PCLK = 6;
     SWIZZLE = 0;
     PCLK_POL = 1;
@@ -720,6 +765,27 @@ int EVE_Init(int display, int board, int touch)
     PCLK_POL = 1;
     HSIZE = 1024;
     VSIZE = 600;
+    CSPREAD = 0;
+    DITHER = 1;
+    break;
+  case DISPLAY_104_1024x100:
+    DWIDTH = 1024; //
+    DHEIGHT = 100;
+    PIXVOFFSET = 0;
+    PIXHOFFSET = 0;
+    HCYCLE = 1355;
+    HOFFSET = 330;
+    HSYNC0 = 170;
+    HSYNC1 = 172;
+    VCYCLE = 758;
+    VOFFSET = 157;
+    VSYNC0 = 135;
+    VSYNC1 = 136;
+    PCLK = 2;
+    SWIZZLE = 0;
+    PCLK_POL = 1;
+    HSIZE = 1024;
+    VSIZE = 100;
     CSPREAD = 0;
     DITHER = 1;
     break;
@@ -771,7 +837,7 @@ int EVE_Init(int display, int board, int touch)
   uint16_t ValL = Ready & 0xFFFF;
   Log("Chip ID = 0x%04x%04x\n", ValH, ValL);
 
-  if (display == DISPLAY_101_1280x800)
+  if ((display == DISPLAY_101_1280x800) || (display == DISPLAY_104_1024x100))
   {
     wr32(REG_FREQUENCY + RAM_REG, 80000000); // Configure the system clock to 80MHz
   }
@@ -844,14 +910,27 @@ int EVE_Init(int display, int board, int touch)
       Cap_Touch_Upload();
     }
     if (display == DISPLAY_70_1024x600_WG || display == DISPLAY_70_800x480_WG ||
-        display == DISPLAY_101_1024x600_ILI)
+        display == DISPLAY_101_1024x600_ILI || display == DISPLAY_50_800x480_WG)
+
     {
       UploadTouchFirmware(Touch_il, sizeof(Touch_il));
-      Calibrate_Fixed(Display_Width(), Display_Height(), 16384, 16384);
+      if (display == DISPLAY_50_800x480_WG)
+        Calibrate_Fixed(Display_Width(), Display_Height(), 16384, 9600); // ZCC-8721V2 resY is 9600
+      else
+        Calibrate_Fixed(Display_Width(), Display_Height(), 16384, 16384);
     }
-    if (display == DISPLAY_52_480x128)
+    else if (display == DISPLAY_52_480x128)
     {
       UploadTouchFirmware(Touch_cyt, sizeof(Touch_cyt));
+    }
+    else
+    {
+      // For panels with a vertical offset, align the touch coordinates
+      // with the on screen pixel offset.
+      if (touch == TOUCH_TPC && Display_VOffset() != 0)
+      {
+        Calibrate_Offset(Display_Width(), Display_Height(), Display_VOffset());
+      }
     }
   }
 
@@ -1550,6 +1629,41 @@ void Calibrate_Fixed(uint32_t width_pixels,
     count++;
   } while (count < 6);
 }
+
+void Calibrate_Offset(uint32_t width_pixels, uint32_t height_pixels, uint32_t v_offset)
+{
+  uint32_t displayX[3], displayY[3];
+  uint32_t touchX[3], touchY[3];
+  int32_t TransMatrix[6];
+
+  displayX[0] = 0;
+  displayY[0] = v_offset;
+  displayX[1] = width_pixels;
+  displayY[1] = v_offset;
+  displayX[2] = width_pixels;
+  displayY[2] = v_offset + height_pixels;
+
+  touchX[0] = 0;
+  touchY[0] = 0;
+  touchX[1] = width_pixels;
+  touchY[1] = 0;
+  touchX[2] = width_pixels;
+  touchY[2] = height_pixels;
+
+  calculate_touch_matrix(displayX, displayY, touchX, touchY, TransMatrix);
+  int count = 0;
+  do
+  {
+    wr32(REG_TOUCH_TRANSFORM_A + RAM_REG + (count * 4),
+         TransMatrix[count]); // Write to Eve config registers
+
+    //    uint16_t ValH = TransMatrix[count] >> 16;
+    //    uint16_t ValL = TransMatrix[count] & 0xFFFF;
+    //    Log("TM%d: 0x%04x %04x\n", count, ValH, ValL);
+
+    count++;
+  } while (count < 6);
+}
 // An interactive calibration screen is created and executed.
 // New calibration values are written to the touch matrix registers of Eve.
 void Calibrate_Manual(uint16_t Width, uint16_t Height, uint16_t V_Offset, uint16_t H_Offset)
@@ -1557,7 +1671,6 @@ void Calibrate_Manual(uint16_t Width, uint16_t Height, uint16_t V_Offset, uint16
   uint32_t displayX[3], displayY[3];
   uint32_t touchX[3], touchY[3];
   uint32_t touchValue = 0, storedValue = 0;
-  int32_t tmp, k;
   int32_t TransMatrix[6];
   uint8_t count = 0;
   uint8_t pressed = 0;
@@ -1669,6 +1782,45 @@ void Cmd_AnimDrawFrame(int16_t x, int16_t y, uint32_t aoptr, uint32_t frame)
   Send_CMD(((uint32_t)y << 16) | x);
   Send_CMD(aoptr);
   Send_CMD(frame);
+}
+
+void Cmd_RomFont(int font, int romslot)
+{
+  Send_CMD(CMD_ROMFONT);
+  Send_CMD(font);
+  Send_CMD(romslot);
+}
+
+void Cmd_Toggle(int16_t x,
+                int16_t y,
+                int16_t w,
+                int16_t font,
+                uint16_t options,
+                uint16_t state,
+                const char *str)
+{
+  uint16_t DataPtr, LoopCount, StrPtr;
+  uint16_t length = (uint16_t)strlen(str);
+  if (!length)
+    return;
+
+  uint32_t *data = (uint32_t *)calloc((length / 4) + 1, sizeof(uint32_t));
+
+  StrPtr = 0;
+  for (DataPtr = 0; DataPtr < (length / 4); DataPtr++, StrPtr += 4)
+    data[DataPtr] = (uint32_t)str[StrPtr + 3] << 24 | (uint32_t)str[StrPtr + 2] << 16 |
+                    (uint32_t)str[StrPtr + 1] << 8 | (uint32_t)str[StrPtr];
+
+  for (LoopCount = 0; LoopCount < (length % 4); LoopCount++, StrPtr++)
+    data[DataPtr] |= (uint32_t)str[StrPtr] << (LoopCount * 8);
+
+  Send_CMD(CMD_TOGGLE);
+  Send_CMD((((uint32_t)y << 16) | (x & 0xffff)));
+  Send_CMD((((uint32_t)font << 16) | (w & 0xffff)));
+  Send_CMD((((uint32_t)state << 16) | options));
+  for (LoopCount = 0; LoopCount <= length / 4; LoopCount++)
+    Send_CMD(data[LoopCount]);
+  free(data);
 }
 
 // ***************************************************************************************************************
@@ -1913,7 +2065,7 @@ bool FlashErase(void)
 
 void UploadTouchFirmware(const uint8_t *firmware, size_t length)
 {
-  CoProWrCmdBuf(firmware, length);
+  CoProWrCmdBuf(firmware, (uint32_t)length);
   UpdateFIFO();
   Wait4CoProFIFOEmpty();
   wr8(REG_CPU_RESET + RAM_REG, 2);

@@ -4,7 +4,7 @@
  * \author FTDI
  * \date 20110323
  *
- * Copyright © 2000-2014 Future Technology Devices International Limited
+ * Copyright Â© 2000-2014 Future Technology Devices International Limited
  *
  *
  * THIS SOFTWARE IS PROVIDED BY FUTURE TECHNOLOGY DEVICES INTERNATIONAL LIMITED ``AS IS'' AND ANY EXPRESS
@@ -19,16 +19,19 @@
  * Project: libMPSSE
  * Module: MiddleLayer
  *
- * Rivision History:
- * 0.1  - initial version
- * 0.2  - 20110708	Added functions FT_ReadGPIO & FT_WriteGPIO
- * 0.3  - 20111102	Added function Mid_GetFtDeviceType
+ * Revision History:
+ * 0.1 - initial version
+ * 0.2 - 20110708	Added functions FT_ReadGPIO & FT_WriteGPIO
+ * 0.3 - 20111102	Added function Mid_GetFtDeviceType
  *				Modified function Mid_SetClock
- * 0.41 - 20140903	Added function Mid_GetQueueStatus
  */
 
 #ifndef FTDI_MID_H
 #define FTDI_MID_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "ftdi_common.h"	/*Common across I2C, SPI, JTAG modules*/
 #include "ftdi_infra.h"		/*Common prrtable infrastructure(datatypes, libraries, etc)*/
@@ -73,50 +76,54 @@
 
 #define MID_LEN_MAX_ERROR_STRING		500
 
-#define MID_CHK_IN_BUF_OK(size)	{if(size > MID_MAX_IN_BUF_SIZE) \
+#define MID_CHK_IN_BUF_OK(size)	{if (size > MID_MAX_IN_BUF_SIZE) \
 	{ return FT_INSUFFICIENT_RESOURCES;}}
 
-FT_STATUS FT_GetNumChannels(FT_LegacyProtocol Protocol,uint32 *numChans);
-FT_STATUS FT_GetChannelInfo(FT_LegacyProtocol Protocol, uint32 index,
+FT_STATUS FT_GetNumChannels(FT_LegacyProtocol Protocol, DWORD *numChans);
+FT_STATUS FT_GetChannelInfo(FT_LegacyProtocol Protocol, DWORD index,
 			FT_DEVICE_LIST_INFO_NODE *chanInfo);
-FT_STATUS FT_OpenChannel(FT_LegacyProtocol Protocol, uint32 index,
+FT_STATUS FT_OpenChannel(FT_LegacyProtocol Protocol, DWORD index,
 			FT_HANDLE *handle);
-FT_STATUS FT_InitChannel(FT_LegacyProtocol Protocol, FT_HANDLE handle,...);
+
+
+FT_STATUS FT_InitChannel(		
+	FT_LegacyProtocol Protocol,	
+	FT_HANDLE handle,			
+	uint32 clockRate,			
+	uint32 latencyTimer,		
+	uint32 configOptions,		
+	DWORD Pin);					
+
 FT_STATUS FT_CloseChannel(FT_LegacyProtocol Protocol, FT_HANDLE handle);
 FT_STATUS FT_Channel_Read(FT_LegacyProtocol Protocol, FT_HANDLE handle,
-				uint32 noOfBytes, uint8* buffer, uint32 *noOfBytesTransferred);
+				DWORD noOfBytes, uint8* buffer, LPDWORD noOfBytesTransferred);
 FT_STATUS FT_Channel_Write(FT_LegacyProtocol Protocol, FT_HANDLE handle,
-			uint32 noOfBytes, uint8* buffer, uint32 *noOfBytesTransferred);
+			DWORD noOfBytes, uint8* buffer, LPDWORD noOfBytesTransferred);
 extern bool Mid_CheckMPSSEAvailable(FT_DEVICE_LIST_INFO_NODE);
 
 extern FT_STATUS Mid_ResetDevice(FT_HANDLE handle);
 extern FT_STATUS Mid_PurgeDevice (FT_HANDLE handle);
-extern FT_STATUS Mid_SetUSBParameters(FT_HANDLE handle,DWORD inputBufSize,
+extern FT_STATUS Mid_SetUSBParameters(FT_HANDLE handle, DWORD inputBufSize,
 										DWORD outputBufSize);
 extern FT_STATUS Mid_SetDeviceSpecialChar(FT_HANDLE handle,
-											UCHAR eventCh,
-											UCHAR eventStatus,
-											UCHAR errorCh,
-											UCHAR errorStatus);
+			UCHAR eventCh, UCHAR eventStatus,
+			UCHAR errorCh, UCHAR errorStatus);
 extern FT_STATUS Mid_SetDeviceTimeOut(FT_HANDLE handle,
-										DWORD rdTimeOut,DWORD wrTimeOut);
+										DWORD rdTimeOut, DWORD wrTimeOut);
 extern FT_STATUS Mid_SetLatencyTimer (FT_HANDLE handle, UCHAR milliSecond);
 extern FT_STATUS Mid_ResetMPSSE(FT_HANDLE handle);
 extern FT_STATUS Mid_EnableMPSSEIn(FT_HANDLE handle);
 extern FT_STATUS Mid_SyncMPSSE(FT_HANDLE handle);
-extern FT_STATUS Mid_SendReceiveCmdFromMPSSE(FT_HANDLE handle,UCHAR\
-	echoCmdFlag,UCHAR ecoCmd,UCHAR *cmdEchoed);
-extern FT_STATUS Mid_SetGPIOLow(FT_HANDLE handle, uint8 value, uint8 \
-	direction);
-extern FT_STATUS Mid_SetClock(FT_HANDLE handle, FT_DEVICE ftDevice, uint32 \
-	clock);
-extern FT_STATUS Mid_GetFtDeviceType(FT_HANDLE handle,FT_DEVICE *ftDevice);
-extern FT_STATUS Mid_SetDeviceLoopbackState(FT_HANDLE handle,uint8 \
-	loopBackFlag);
+extern FT_STATUS Mid_SendReceiveCmdFromMPSSE(FT_HANDLE handle, 
+			UCHAR echoCmdFlag, UCHAR ecoCmd, UCHAR *cmdEchoed);
+extern FT_STATUS Mid_SetGPIOLow(FT_HANDLE handle, uint8 value, uint8 direction);
+extern FT_STATUS Mid_SetClock(FT_HANDLE handle, FT_DEVICE ftDevice, uint32 clock);
+extern FT_STATUS Mid_GetFtDeviceType(FT_HANDLE handle, FT_DEVICE *ftDevice);
+extern FT_STATUS Mid_SetDeviceLoopbackState(FT_HANDLE handle, uint8 loopBackFlag);
 extern FT_STATUS Mid_EmptyDeviceInputBuff(FT_HANDLE handle);
-FTDI_API FT_STATUS FT_WriteGPIO(FT_HANDLE handle, uint8 dir, uint8 value);
-FTDI_API FT_STATUS FT_ReadGPIO(FT_HANDLE handle,uint8 *value);
-extern FT_STATUS Mid_GetQueueStatus(FT_HANDLE handle, LPDWORD lpdwAmountInRxQueue);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* FTDI_MID_H */
-

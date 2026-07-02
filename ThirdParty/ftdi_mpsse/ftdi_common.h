@@ -19,15 +19,27 @@
  * Project: libMPSSE
  * Module: common
  *
- * Rivision History:
+ * Revision History:
  * 0.1 - initial version
  * 0.2 - 20110708 - Changed MAX_CLOCK_RATE from 3.4 to 30MHz
- * 0.3 - 20111103 - Added MPSSE command definations for fullduplex transfers
+ * 0.3 - 20111103 - Added MPSSE command definitions for fullduplex transfers
+ * 0.4 - 20200428 - removed unnecessary files and directory structure
  */
 
 #ifndef FTDI_COMMON_H
 #define FTDI_COMMON_H
 
+/* Default library version number. Overridden by makefile. */
+
+#ifndef FT_VER_MAJOR
+#define FT_VER_MAJOR		1
+#endif // FT_VER_MAJOR
+#ifndef FT_VER_MINOR
+#define FT_VER_MINOR		0
+#endif // FT_VER_MINOR
+#ifndef FT_VER_BUILD
+#define FT_VER_BUILD		8
+#endif // FT_VER_BUILD
 
 /******************************************************************************/
 /*								Macro defines								  */
@@ -47,6 +59,7 @@ Implement the lock/unlock only if really required, otherwise keep as placeholder
 #define DISABLE_EVENT					0
 #define DISABLE_CHAR					0
 #define DEVICE_READ_TIMEOUT_INFINITE    0
+#define DEVICE_READ_TIMEOUT 			5000
 #define DEVICE_WRITE_TIMEOUT 			5000
 #define INTERFACE_MASK_IN				0x00
 #define INTERFACE_MASK_OUT				0x01
@@ -64,7 +77,8 @@ Implement the lock/unlock only if really required, otherwise keep as placeholder
 #define MPSSE_CMD_DISABLE_3PHASE_CLOCKING	0x8D
 #define MPSSE_CMD_ENABLE_DRIVE_ONLY_ZERO	0x9E
 
-
+/*MPSSE Data Command - LSB First */
+#define MPSSE_CMD_DATA_LSB_FIRST			0x08
 
 /*MPSSE Data Commands - bit mode - MSB first */
 #define MPSSE_CMD_DATA_OUT_BITS_POS_EDGE	0x12
@@ -106,6 +120,9 @@ output is supported only in FT232H chip. This feature is called DriveOnlyZero fe
 enabled when the following bit is set in the options parameter in function I2C_Init */
 #define I2C_ENABLE_DRIVE_ONLY_ZERO	0x0002
 
+#ifndef I2C_ENABLE_PIN_STATE_CONFIG
+#define I2C_ENABLE_PIN_STATE_CONFIG 0x0010
+#endif
 
 
 /******************************************************************************/

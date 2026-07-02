@@ -6,6 +6,7 @@
 
 #include "ftd2xx.h"
 #include "libmpsse_spi.h"
+#include <stdio.h>
 
 static FT_HANDLE handle;
 
@@ -87,15 +88,73 @@ int HAL_Eve_Reset_HW(void)
   Init_libMPSSE();
   HAL_Close();
   FT_STATUS result = SPI_GetNumChannels(&total_channels);
-  printf("channels found : %d\n", total_channels);
-  const char *channel = getenv("SPICHANNEL");
+
+  const char *verbose = getenv("BRIDGE_VERBOSE");
+  bool do_verbose = verbose && verbose[0] == '1';
+  if (do_verbose)
+  {
+    DWORD mpsse_version = 0;
+    DWORD d2xx_version = 0;
+    printf("Bridge channels found : %d\n", total_channels);
+    if (Ver_libMPSSE(&mpsse_version, &d2xx_version) == FT_OK)
+    {
+      printf("Bridge dll version    : %1x.%1x.%1x.%1x\n",
+             *(((uint8_t *)(&d2xx_version)) + 3),
+             *(((uint8_t *)(&d2xx_version)) + 2),
+             *(((uint8_t *)(&d2xx_version)) + 1),
+             *(((uint8_t *)(&d2xx_version)) + 0));
+      printf("Bridge mpsse version  : %1x.%1x.%1x.%1x\n",
+             *(((uint8_t *)(&mpsse_version)) + 3),
+             *(((uint8_t *)(&mpsse_version)) + 2),
+             *(((uint8_t *)(&mpsse_version)) + 1),
+             *(((uint8_t *)(&mpsse_version)) + 0));
+    };
+    if (total_channels)
+    {
+      printf("\nChannel  Serial           Description\n");
+      for (uint32_t i = 0; i < total_channels; i++)
+      {
+        FT_DEVICE_LIST_INFO_NODE devList;
+        SPI_GetChannelInfo(i, &devList);
+        printf("%-8d %-16s %s\n", i, devList.SerialNumber, devList.Description);
+      }
+      printf("\n");
+    }
+  }
+  const char *channel = getenv("BRIDGE_CHANNEL");
   int ichan = 0;
   if (channel)
   {
     ichan = atoi(channel);
   }
-
-  if (total_channels > ichan)
+  const char *serial = getenv("BRIDGE_SERIAL");
+  bool serial_found = serial == NULL;
+  if (serial)
+  {
+    for (uint32_t i = 0; i < total_channels; i++)
+    {
+      FT_DEVICE_LIST_INFO_NODE devList;
+      SPI_GetChannelInfo(i, &devList);
+      if (strcmp(serial, devList.SerialNumber) == 0)
+      {
+        serial_found = true;
+        ichan = i;
+        break;
+      }
+    }
+  }
+  if (do_verbose && serial)
+  {
+    if (serial_found)
+    {
+      printf("Bridge with serial %s found as channel %d\n", serial, ichan);
+    }
+    else
+    {
+      printf("Bridge with serial %s not found\n", serial);
+    }
+  }
+  if (serial_found && (int)total_channels > ichan)
   {
     FT_DEVICE_LIST_INFO_NODE devList;
     SPI_GetChannelInfo(ichan, &devList);
@@ -115,6 +174,11 @@ int HAL_Eve_Reset_HW(void)
     if (status == FT_OK)
     {
       printf("USB->SPI Bridge opened\n");
+      if (do_verbose)
+      {
+        printf("Bridge Serial Number : %s\n", devList.SerialNumber);
+        printf("Bridge Description   : %s\n", devList.Description);
+      }
     }
     else
     {
@@ -124,7 +188,7 @@ int HAL_Eve_Reset_HW(void)
   }
   else
   {
-    printf("USB->SPI Bridge not found.");
+    printf("USB->SPI Bridge not found.\n");
     return 0;
   }
 

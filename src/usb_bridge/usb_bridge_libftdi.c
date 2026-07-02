@@ -25,6 +25,11 @@
 
 struct ftdi_context *ftdi;
 
+void HAL_Delay(uint32_t milliSeconds)
+{
+  usleep(milliSeconds * 1000);
+}
+
 void HAL_Close(void)
 {
   printf("Closing bridge\n");
@@ -141,11 +146,6 @@ void HAL_SPI_ReadBuffer(uint8_t *Buffer, uint32_t Length)
   ftdi_read_data(ftdi, Buffer, Length);
 }
 
-void HAL_Delay(uint32_t milliSeconds)
-{
-  usleep(milliSeconds * 1000);
-}
-
 int HAL_Eve_Reset_HW(void)
 {
   ftdi = ftdi_new();
@@ -158,8 +158,12 @@ int HAL_Eve_Reset_HW(void)
   int ftdi_status = ftdi_usb_open(ftdi, 0x1b3d, 0x200);
   if (ftdi_status != 0)
   {
-    printf("Can't open USB bridge, error %s\n", ftdi_get_error_string(ftdi));
-    return 0;
+    ftdi_status = ftdi_usb_open(ftdi, 0x0403, 0x6045); // USB-C Bridge
+    if (ftdi_status != 0)
+    {
+      printf("Can't open USB bridge, error %s\n", ftdi_get_error_string(ftdi));
+      return 0;
+    }
   }
   printf("Bridge opened successfully!\n");
   ftdi_usb_reset(ftdi);
