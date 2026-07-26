@@ -1,8 +1,7 @@
 #ifdef _MSC_VER
 #include <conio.h>
 #endif
-#include "MONOSPACE821BT_64_ASTC.glyph.h"
-#include "MONOSPACE821BT_64_ASTC.xfont.h"
+#include "IBM_plex.h"
 #include "eve.h"
 #include "hw_api.h"
 
@@ -23,7 +22,8 @@ void MakeScreen_HelloWorld()
            Display_VOffset() + (Display_Height() / 2),
            1,
            OPT_CENTER,
-           "MONOSPACE\n821BT_64");
+           "IBM_PLEX\nMONO_26\nКириллица");
+
   // End the display list
   Send_CMD(DISPLAY());
   // Swap commands into RAM
@@ -41,14 +41,18 @@ int main()
   }
 
   StartCoProTransfer(RAM_G, 0);
-  HAL_SPI_WriteBuffer((uint8_t *)&MONOSPACE821BT_64_ASTC_xfont,
-                      sizeof(MONOSPACE821BT_64_ASTC_xfont));
+  HAL_SPI_WriteBuffer((uint8_t *)&ibm_plex_mono_16_ASTC_xfont, ibm_plex_mono_ASTC_xfont_len);
   HAL_SPI_Disable();
 
+  UpdateFIFO();
+  Wait4CoProFIFOEmpty();
+
   StartCoProTransfer(RAM_G + 4096, 0);
-  HAL_SPI_WriteBuffer((uint8_t *)&MONOSPACE821BT_64_ASTC_glyph,
-                      sizeof(MONOSPACE821BT_64_ASTC_glyph));
+  HAL_SPI_WriteBuffer((uint8_t *)&ibm_plex_mono_16_ASTC_glyph, ibm_plex_mono_16_ASTC_glyph_len);
   HAL_SPI_Disable();
+
+  UpdateFIFO();
+  Wait4CoProFIFOEmpty();
 
   MakeScreen_HelloWorld();
   HAL_Close();

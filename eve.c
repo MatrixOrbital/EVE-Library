@@ -1410,31 +1410,38 @@ void Cmd_Button(uint16_t x,
 // ***************************************************
 void Cmd_Text(uint16_t x, uint16_t y, uint16_t font, uint16_t options, const char *str)
 {
-  uint16_t DataPtr, LoopCount, StrPtr;
-
   uint16_t length = (uint16_t)strlen(str);
   if (!length)
     return;
 
-  uint32_t *data = (uint32_t *)calloc(
-      (length / 4) + 1, sizeof(uint32_t)); // Allocate memory for the string expansion
+  uint32_t *data = (uint32_t *)calloc((length / 4) + 1, sizeof(uint32_t));
 
-  StrPtr = 0;
-  for (DataPtr = 0; DataPtr < (length / 4); ++DataPtr, StrPtr = StrPtr + 4)
-    data[DataPtr] = (uint32_t)str[StrPtr + 3] << 24 | (uint32_t)str[StrPtr + 2] << 16 |
-                    (uint32_t)str[StrPtr + 1] << 8 | (uint32_t)str[StrPtr];
+  uint16_t StrPtr = 0;
+  uint16_t DataPtr;
 
-  for (LoopCount = 0; LoopCount < (length % 4); ++LoopCount, ++StrPtr)
-    data[DataPtr] |= (uint32_t)str[StrPtr] << (LoopCount * 8);
+  for (DataPtr = 0; DataPtr < (length / 4); ++DataPtr, StrPtr += 4)
+  {
+    data[DataPtr] = (uint32_t)(uint8_t)str[StrPtr + 3] << 24 |
+                    (uint32_t)(uint8_t)str[StrPtr + 2] << 16 |
+                    (uint32_t)(uint8_t)str[StrPtr + 1] << 8 | (uint32_t)(uint8_t)str[StrPtr];
+  }
 
-  // Set up the command
+  // Handle remaining bytes
+  for (uint16_t LoopCount = 0; LoopCount < (length % 4); ++LoopCount, ++StrPtr)
+  {
+    data[DataPtr] |= (uint32_t)(uint8_t)str[StrPtr] << (LoopCount * 8);
+  }
+
+  // Send command
   Send_CMD(CMD_TEXT);
   Send_CMD(((uint32_t)y << 16) | x);
   Send_CMD(((uint32_t)options << 16) | font);
 
-  // Send out the text
-  for (LoopCount = 0; LoopCount <= length / 4; LoopCount++)
-    Send_CMD(data[LoopCount]); // These text bytes get sucked up 4 at a time and fired at the FIFO
+  // Send text data
+  for (uint16_t LoopCount = 0; LoopCount <= length / 4; LoopCount++)
+  {
+    Send_CMD(data[LoopCount]);
+  }
 
   free(data);
 }
