@@ -30,7 +30,7 @@ A quick and easy sanity check to ensure that your Matrix Orbital EVE3 or EVE4 SP
 **Hardware Requirements** 
 
 An EVE display such as:
-https://www.matrixorbital.com/image/cache/catalog/products/EVE/EVE3-43G-300x300.jpg)
+![alt text]https://www.matrixorbital.com/image/cache/catalog/products/EVE/EVE3-43G-300x300.jpg)
 
 **EVE4x SPI TFT** - Uses BT817/BT818 Graphics controller
 
