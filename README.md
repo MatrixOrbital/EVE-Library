@@ -30,7 +30,7 @@ A quick and easy sanity check to ensure that your Matrix Orbital EVE3 or EVE4 SP
 **Hardware Requirements** 
 
 An EVE display such as:
-![alt text](https://www.matrixorbital.com/image/cache/catalog/products/EVE/EVE3-43G-300x300.jpg)
+https://www.matrixorbital.com/image/cache/catalog/products/EVE/EVE3-43G-300x300.jpg)
 
 **EVE4x SPI TFT** - Uses BT817/BT818 Graphics controller
 
@@ -46,17 +46,9 @@ https://www.matrixorbital.com/ftdi-eve/eve-bt815-bt816
 
 You will require an USB to SPI bridge OR an USB version of the EVE display:
 
-An EVE2-USB2SPI-KIT-A Bridge
+An EVE-USB2SPI-KIT-C Bridge, recommended for new design.
 
-https://www.matrixorbital.com/ftdi-eve/EVE2-USB2SPI-KIT-A
-
-![alt text](https://www.matrixorbital.com/image/cache/catalog/products/EVE2%20USB%20to%20SPI%20Module-250x250.jpg)
-
-**OR**
-
-An EVE-USB2SPI-KIT-B Bridge, recommended for new design.
-
-https://www.matrixorbital.com/eve-usb2spi-kit-b
+https://www.matrixorbital.com/eve-usb2spi-kit-c
 
 ![alt text](https://www.matrixorbital.com/image/cache/catalog/products/Accessories%20resized/EVE-USB2SPI-KIT-B-1024768-250x250.png)
 
